@@ -15,7 +15,8 @@ class RegisterScreen extends StatefulWidget {
 // Changed from _RegisterScreenState to RegisterScreenState (removing the underscore)
 class RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _fullnameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -26,7 +27,8 @@ class RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _usernameController.dispose();
+    _fullnameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -52,7 +54,8 @@ class RegisterScreenState extends State<RegisterScreen> {
       });
 
       final result = await _authService.register(
-        _nameController.text.trim(),
+        _fullnameController.text,
+        _usernameController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text,
       );
@@ -129,12 +132,25 @@ class RegisterScreenState extends State<RegisterScreen> {
 
                   // Name Field
                   CustomTextField(
-                    controller: _nameController,
+                    controller: _usernameController,
+                    labelText: 'username',
+                    hintText: 'Enter your username',
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your username';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  CustomTextField(
+                    controller: _fullnameController,
                     labelText: 'Full Name',
                     hintText: 'Enter your full name',
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your name';
+                        return 'Please enter your full name';
                       }
                       return null;
                     },
