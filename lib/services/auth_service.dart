@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fintrack/services/api_service.dart';
 
 class AuthService {
-  // Replace with your actual API URL
-  final String baseUrl = 'http://127.0.0.1:3000/api';
+  // Remove the baseUrl definition and use ApiService.baseUrl instead
+  // Update all instances of baseUrl to use ApiService.baseUrl
 
   // Store JWT token
   Future<void> storeToken(String token) async {
@@ -25,14 +26,15 @@ class AuthService {
   }
 
   // Login user
-  Future<Map<String, dynamic>> login(String email, String password) async {
+  Future<Map<String, dynamic>> login(String username, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/login'),
+        Uri.parse('${ApiService.baseUrl}/auth/login'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'email': email, 'password': password}),
+        body: json.encode({'username': username, 'password': password}),
       );
-
+      print('Register Response Status: ${response.statusCode}');
+      print('Register Response Body: ${response.body}');
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
@@ -61,7 +63,7 @@ class AuthService {
   ) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/register'),
+        Uri.parse('${ApiService.baseUrl}/auth/register'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'fullname': fullname,
@@ -70,6 +72,10 @@ class AuthService {
           'password': password,
         }),
       );
+
+      // Tambahkan print untuk debugging
+      print('Register Response Status: ${response.statusCode}');
+      print('Register Response Body: ${response.body}');
 
       final responseData = json.decode(response.body);
 
@@ -95,5 +101,42 @@ class AuthService {
   // Logout
   Future<void> logout() async {
     await removeToken();
+  }
+
+  // Get current user profile
+  Future<Map<String, dynamic>> getCurrentUser() async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return {'success': false, 'message': 'Not authenticated'};
+      }
+
+      final response = await http.get(
+        Uri.parse('${ApiService.baseUrl}/auth/user'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data':
+              responseData is Map
+                  ? Map<String, dynamic>.from(responseData)
+                  : {},
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to get user profile',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
   }
 }

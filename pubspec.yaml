@@ -30,12 +30,14 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  cupertino_icons: ^1.0.2
+  intl: ^0.18.0
+  fl_chart: ^0.65.0  # atau versi terbaru yang tersedia# Downgraded from 0.62.0 to a more stable version
+  percent_indicator: ^4.2.3
+  shared_preferences: ^2.1.1
+  provider: ^6.0.5
+  http: ^1.1.0
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
-  http: ^0.13.5
-  shared_preferences: ^2.0.15
 
 dev_dependencies:
   flutter_test:
