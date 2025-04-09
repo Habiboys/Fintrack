@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:logger/logger.dart';
 
 class TransactionScreen extends StatefulWidget {
-  const TransactionScreen({Key? key}) : super(key: key);
+  // Fixed: Using super parameter for key
+  const TransactionScreen({super.key});
 
   @override
   State<TransactionScreen> createState() => _TransactionScreenState();
@@ -15,79 +18,84 @@ class _TransactionScreenState extends State<TransactionScreen>
     locale: 'id_ID',
     symbol: 'Rp ',
   );
-
-  // Sample data - in a real app, this would come from your database
-  final List<Map<String, dynamic>> transactions = [
-    {
-      'title': 'Grocery Shopping',
-      'amount': 350000,
-      'date': DateTime.now().subtract(const Duration(days: 1)),
-      'isExpense': true,
-      'category': 'Food',
-      'icon': Icons.shopping_basket,
-      'color': Colors.orange,
-    },
-    {
-      'title': 'Salary',
-      'amount': 8500000,
-      'date': DateTime.now().subtract(const Duration(days: 3)),
-      'isExpense': false,
-      'category': 'Income',
-      'icon': Icons.account_balance_wallet,
-      'color': Colors.green,
-    },
-    {
-      'title': 'Electricity Bill',
-      'amount': 450000,
-      'date': DateTime.now().subtract(const Duration(days: 5)),
-      'isExpense': true,
-      'category': 'Utilities',
-      'icon': Icons.electric_bolt,
-      'color': Colors.blue,
-    },
-    {
-      'title': 'Dinner with Friends',
-      'amount': 275000,
-      'date': DateTime.now().subtract(const Duration(days: 7)),
-      'isExpense': true,
-      'category': 'Food',
-      'icon': Icons.restaurant,
-      'color': Colors.orange,
-    },
-    {
-      'title': 'Freelance Project',
-      'amount': 2500000,
-      'date': DateTime.now().subtract(const Duration(days: 10)),
-      'isExpense': false,
-      'category': 'Income',
-      'icon': Icons.work,
-      'color': Colors.green,
-    },
-    {
-      'title': 'Internet Bill',
-      'amount': 350000,
-      'date': DateTime.now().subtract(const Duration(days: 12)),
-      'isExpense': true,
-      'category': 'Utilities',
-      'icon': Icons.wifi,
-      'color': Colors.blue,
-    },
-    {
-      'title': 'Transportation',
-      'amount': 125000,
-      'date': DateTime.now().subtract(const Duration(days: 14)),
-      'isExpense': true,
-      'category': 'Transport',
-      'icon': Icons.directions_car,
-      'color': Colors.purple,
-    },
-  ];
+  
+  // Initialize logger
+  final logger = Logger();
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    // Initialize date formatting for Indonesian locale
+    initializeDateFormatting('id_ID', null);
   }
+
+  // Sample data - in a real app, this would come from your database
+  final List<Map<String, dynamic>> transactions = [
+    {
+      'title': 'Belanja Bahan Makanan',
+      'amount': 350000,
+      'date': DateTime.now().subtract(const Duration(days: 1)),
+      'isExpense': true,
+      'category': 'Makanan',
+      'icon': Icons.shopping_basket,
+      'color': Colors.orange,
+    },
+    {
+      'title': 'Gaji Bulanan',
+      'amount': 8500000,
+      'date': DateTime.now().subtract(const Duration(days: 3)),
+      'isExpense': false,
+      'category': 'Pendapatan',
+      'icon': Icons.account_balance_wallet,
+      'color': Colors.green,
+    },
+    {
+      'title': 'Tagihan Listrik',
+      'amount': 450000,
+      'date': DateTime.now().subtract(const Duration(days: 5)),
+      'isExpense': true,
+      'category': 'Utilitas',
+      'icon': Icons.electric_bolt,
+      'color': Colors.blue,
+    },
+    {
+      'title': 'Makan Malam dengan Teman',
+      'amount': 275000,
+      'date': DateTime.now().subtract(const Duration(days: 7)),
+      'isExpense': true,
+      'category': 'Makanan',
+      'icon': Icons.restaurant,
+      'color': Colors.orange,
+    },
+    {
+      'title': 'Proyek Freelance',
+      'amount': 2500000,
+      'date': DateTime.now().subtract(const Duration(days: 10)),
+      'isExpense': false,
+      'category': 'Pendapatan',
+      'icon': Icons.work,
+      'color': Colors.green,
+    },
+    {
+      'title': 'Tagihan Internet',
+      'amount': 350000,
+      'date': DateTime.now().subtract(const Duration(days: 12)),
+      'isExpense': true,
+      'category': 'Utilitas',
+      'icon': Icons.wifi,
+      'color': Colors.blue,
+    },
+    {
+      'title': 'Transportasi',
+      'amount': 125000,
+      'date': DateTime.now().subtract(const Duration(days: 14)),
+      'isExpense': true,
+      'category': 'Transportasi',
+      'icon': Icons.directions_car,
+      'color': Colors.purple,
+    },
+  ];
 
   @override
   void dispose() {
@@ -100,16 +108,16 @@ class _TransactionScreenState extends State<TransactionScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Transactions',
+          'Transaksi',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(text: 'All'),
-            Tab(text: 'Income'),
-            Tab(text: 'Expense'),
+            Tab(text: 'Semua'),
+            Tab(text: 'Pemasukan'),
+            Tab(text: 'Pengeluaran'),
           ],
           indicatorColor: Theme.of(context).primaryColor,
           labelColor: Theme.of(context).primaryColor,
@@ -139,14 +147,14 @@ class _TransactionScreenState extends State<TransactionScreen>
 
   Widget _buildTransactionList(List<Map<String, dynamic>> transactions) {
     if (transactions.isEmpty) {
-      return const Center(child: Text('No transactions found'));
+      return const Center(child: Text('Tidak ada transaksi ditemukan'));
     }
 
     // Group transactions by date
     final Map<String, List<Map<String, dynamic>>> groupedTransactions = {};
 
     for (var transaction in transactions) {
-      final date = DateFormat('dd MMM yyyy').format(transaction['date']);
+      final date = DateFormat('dd MMM yyyy', 'id_ID').format(transaction['date']);
       if (!groupedTransactions.containsKey(date)) {
         groupedTransactions[date] = [];
       }
@@ -173,11 +181,10 @@ class _TransactionScreenState extends State<TransactionScreen>
                 ),
               ),
             ),
-            ...dailyTransactions
-                .map(
-                  (transaction) => _buildTransactionItem(context, transaction),
-                )
-                .toList(),
+            // Fixed: Removed unnecessary toList() in spread
+            ...dailyTransactions.map(
+              (transaction) => _buildTransactionItem(context, transaction),
+            ),
             const SizedBox(height: 16),
           ],
         );
@@ -197,7 +204,8 @@ class _TransactionScreenState extends State<TransactionScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            // Fixed: Converted int to double for alpha parameter
+            color: Colors.grey.withValues(alpha: 26.0), // 0.1 * 255 = 26.0
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -212,7 +220,8 @@ class _TransactionScreenState extends State<TransactionScreen>
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: transaction['color'].withOpacity(0.2),
+                // Fixed: Replaced withOpacity with withValues
+                color: transaction['color'].withValues(alpha: 51.0), // 0.2 * 255 = 51
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -276,7 +285,7 @@ class _TransactionScreenState extends State<TransactionScreen>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Transaction Details',
+                    'Detail Transaksi',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
@@ -292,7 +301,8 @@ class _TransactionScreenState extends State<TransactionScreen>
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: transaction['color'].withOpacity(0.2),
+                    // Fixed: Replaced withOpacity with withValues
+                    color: transaction['color'].withValues(alpha: 51.0), // 0.2 * 255 = 51
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -314,15 +324,15 @@ class _TransactionScreenState extends State<TransactionScreen>
                 ),
               ),
               const SizedBox(height: 32),
-              _buildDetailItem('Title', transaction['title']),
-              _buildDetailItem('Category', transaction['category']),
+              _buildDetailItem('Judul', transaction['title']),
+              _buildDetailItem('Kategori', transaction['category']),
               _buildDetailItem(
-                'Date',
-                DateFormat('dd MMMM yyyy').format(transaction['date']),
+                'Tanggal',
+                DateFormat('dd MMMM yyyy', 'id_ID').format(transaction['date']),
               ),
               _buildDetailItem(
-                'Type',
-                transaction['isExpense'] ? 'Expense' : 'Income',
+                'Tipe',
+                transaction['isExpense'] ? 'Pengeluaran' : 'Pemasukan',
               ),
               const SizedBox(height: 32),
               Row(
@@ -348,7 +358,7 @@ class _TransactionScreenState extends State<TransactionScreen>
                       Navigator.pop(context);
                     },
                     icon: const Icon(Icons.delete),
-                    label: const Text('Delete'),
+                    label: const Text('Hapus'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       padding: const EdgeInsets.symmetric(
@@ -386,25 +396,25 @@ class _TransactionScreenState extends State<TransactionScreen>
     final formKey = GlobalKey<FormState>();
     String title = '';
     double amount = 0;
-    String category = 'Food';
+    String category = 'Makanan';
     bool isExpense = true;
 
     final categories = [
-      {'name': 'Food', 'icon': Icons.restaurant, 'color': Colors.orange},
+      {'name': 'Makanan', 'icon': Icons.restaurant, 'color': Colors.orange},
       {
-        'name': 'Transport',
+        'name': 'Transportasi',
         'icon': Icons.directions_car,
         'color': Colors.purple,
       },
-      {'name': 'Utilities', 'icon': Icons.electric_bolt, 'color': Colors.blue},
-      {'name': 'Shopping', 'icon': Icons.shopping_bag, 'color': Colors.pink},
-      {'name': 'Entertainment', 'icon': Icons.movie, 'color': Colors.red},
+      {'name': 'Utilitas', 'icon': Icons.electric_bolt, 'color': Colors.blue},
+      {'name': 'Belanja', 'icon': Icons.shopping_bag, 'color': Colors.pink},
+      {'name': 'Hiburan', 'icon': Icons.movie, 'color': Colors.red},
       {
-        'name': 'Income',
+        'name': 'Pendapatan',
         'icon': Icons.account_balance_wallet,
         'color': Colors.green,
       },
-      {'name': 'Other', 'icon': Icons.more_horiz, 'color': Colors.grey},
+      {'name': 'Lainnya', 'icon': Icons.more_horiz, 'color': Colors.grey},
     ];
 
     showModalBottomSheet(
@@ -433,7 +443,7 @@ class _TransactionScreenState extends State<TransactionScreen>
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Add ${isExpense ? 'Expense' : 'Income'}',
+                          'Tambah ${isExpense ? 'Pengeluaran' : 'Pemasukan'}',
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -470,7 +480,7 @@ class _TransactionScreenState extends State<TransactionScreen>
                               ),
                               child: Center(
                                 child: Text(
-                                  'Expense',
+                                  'Pengeluaran',
                                   style: TextStyle(
                                     color:
                                         isExpense
@@ -488,7 +498,7 @@ class _TransactionScreenState extends State<TransactionScreen>
                             onTap: () {
                               setState(() {
                                 isExpense = false;
-                                category = 'Income';
+                                category = 'Pendapatan';
                               });
                             },
                             child: Container(
@@ -504,7 +514,7 @@ class _TransactionScreenState extends State<TransactionScreen>
                               ),
                               child: Center(
                                 child: Text(
-                                  'Income',
+                                  'Pemasukan',
                                   style: TextStyle(
                                     color:
                                         !isExpense
@@ -525,17 +535,17 @@ class _TransactionScreenState extends State<TransactionScreen>
                     // Amount Field
                     TextFormField(
                       decoration: const InputDecoration(
-                        labelText: 'Amount',
+                        labelText: 'Jumlah',
                         prefixText: 'Rp ',
                         border: OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.number,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter an amount';
+                          return 'Silakan masukkan jumlah';
                         }
                         if (double.tryParse(value) == null) {
-                          return 'Please enter a valid number';
+                          return 'Silakan masukkan angka yang valid';
                         }
                         return null;
                       },
@@ -549,12 +559,12 @@ class _TransactionScreenState extends State<TransactionScreen>
                     // Title Field
                     TextFormField(
                       decoration: const InputDecoration(
-                        labelText: 'Title',
+                        labelText: 'Judul',
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter a title';
+                          return 'Silakan masukkan judul';
                         }
                         return null;
                       },
@@ -568,7 +578,7 @@ class _TransactionScreenState extends State<TransactionScreen>
                     // Category Selection
                     if (isExpense) ...[
                       const Text(
-                        'Category',
+                        'Kategori',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -583,8 +593,8 @@ class _TransactionScreenState extends State<TransactionScreen>
                                 .where(
                                   (c) =>
                                       isExpense
-                                          ? c['name'] != 'Income'
-                                          : c['name'] == 'Income',
+                                          ? c['name'] != 'Pendapatan'
+                                          : c['name'] == 'Pendapatan',
                                 )
                                 .map((c) {
                                   return GestureDetector(
@@ -599,18 +609,13 @@ class _TransactionScreenState extends State<TransactionScreen>
                                         vertical: 8,
                                       ),
                                       decoration: BoxDecoration(
-                                        color:
-                                            category == c['name']
-                                                ? (c['color'] as Color)
-                                                    .withOpacity(0.2)
-                                                : Colors.grey[200],
+                                        color: category == c['name']
+                                            ? (c['color'] as Color).withValues(alpha: 51.0)
+                                            : Colors.grey[200],
                                         borderRadius: BorderRadius.circular(16),
-                                        border:
-                                            category == c['name']
-                                                ? Border.all(
-                                                  color: c['color'] as Color,
-                                                )
-                                                : null,
+                                        border: category == c['name']
+                                            ? Border.all(color: c['color'] as Color)
+                                            : null,
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
@@ -650,11 +655,12 @@ class _TransactionScreenState extends State<TransactionScreen>
                         onPressed: () {
                           if (formKey.currentState!.validate()) {
                             formKey.currentState!.save();
-                            // Add transaction logic
+                            // Replace print with logger
+                            logger.i('Menambahkan transaksi: $title - $category - Rp ${amount.toStringAsFixed(0)}');
                             Navigator.pop(context);
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Transaction added successfully'),
+                                content: Text('Transaksi berhasil ditambahkan'),
                                 backgroundColor: Colors.green,
                               ),
                             );
@@ -663,7 +669,7 @@ class _TransactionScreenState extends State<TransactionScreen>
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: const Text('Save Transaction'),
+                        child: const Text('Simpan Transaksi'),
                       ),
                     ),
                     const SizedBox(height: 16),

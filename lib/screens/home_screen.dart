@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart'; // Add this import
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  // Using super parameter for key
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize date formatting for Indonesian locale
+    initializeDateFormatting('id_ID', null);
+  }
+
   final currencyFormatter = NumberFormat.currency(
     locale: 'id_ID',
     symbol: 'Rp ',
@@ -22,29 +31,29 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Map<String, dynamic>> recentTransactions = [
     {
-      'title': 'Grocery Shopping',
+      'title': 'Belanja Bulanan',
       'amount': 350000,
       'date': DateTime.now().subtract(const Duration(days: 1)),
       'isExpense': true,
-      'category': 'Food',
+      'category': 'Makanan',
       'icon': Icons.shopping_basket,
       'color': Colors.orange,
     },
     {
-      'title': 'Salary',
+      'title': 'Gaji Bulanan',
       'amount': 8500000,
       'date': DateTime.now().subtract(const Duration(days: 3)),
       'isExpense': false,
-      'category': 'Income',
+      'category': 'Pendapatan',
       'icon': Icons.account_balance_wallet,
       'color': Colors.green,
     },
     {
-      'title': 'Electricity Bill',
+      'title': 'Tagihan Listrik',
       'amount': 450000,
       'date': DateTime.now().subtract(const Duration(days: 5)),
       'isExpense': true,
-      'category': 'Utilities',
+      'category': 'Utilitas',
       'icon': Icons.electric_bolt,
       'color': Colors.blue,
     },
@@ -52,11 +61,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Get the safe area padding for iOS
+// Remove unused variable since SafeArea widget already handles padding
+    
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            // Adjust padding to account for iOS devices
+            padding: EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -68,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Welcome back,',
+                          'Selamat datang kembali,',
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.grey[600],
@@ -76,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 4),
                         const Text(
-                          'John Doe',
+                          'Nouval Habibie',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -86,9 +99,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     CircleAvatar(
                       radius: 24,
+                      // Fix: Convert int to double for alpha parameter
                       backgroundColor: Theme.of(
                         context,
-                      ).primaryColor.withOpacity(0.2),
+                      ).primaryColor.withValues(alpha: 51.0),
                       child: Icon(
                         Icons.person,
                         color: Theme.of(context).primaryColor,
@@ -107,7 +121,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     gradient: LinearGradient(
                       colors: [
                         Theme.of(context).primaryColor,
-                        Theme.of(context).primaryColor.withOpacity(0.8),
+                        // Replacing withOpacity with withValues
+                        Theme.of(context).primaryColor.withValues(alpha: 204.0),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -115,7 +130,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).primaryColor.withOpacity(0.3),
+                        // Replacing withOpacity with withValues
+                        color: Theme.of(context).primaryColor.withValues(alpha: 77.0),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -125,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Total Balance',
+                        'Total Saldo',
                         style: TextStyle(fontSize: 16, color: Colors.white70),
                       ),
                       const SizedBox(height: 8),
@@ -139,21 +155,28 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 24),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        // Mengubah dari spaceBetween menjadi spaceAround untuk distribusi ruang yang lebih baik
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildBalanceItem(
-                            context,
-                            'Income',
-                            income,
-                            Icons.arrow_downward,
-                            Colors.green,
+                          // Wrap dengan Flexible untuk memastikan konten dapat menyesuaikan ruang yang tersedia
+                          Flexible(
+                            child: _buildBalanceItem(
+                              context,
+                              'Pemasukan',
+                              income,
+                              Icons.arrow_downward,
+                              Colors.green,
+                            ),
                           ),
-                          _buildBalanceItem(
-                            context,
-                            'Expense',
-                            expense,
-                            Icons.arrow_upward,
-                            Colors.red,
+                          const SizedBox(width: 8), // Mengurangi jarak antar item
+                          Flexible(
+                            child: _buildBalanceItem(
+                              context,
+                              'Pengeluaran',
+                              expense,
+                              Icons.arrow_upward,
+                              Colors.red,
+                            ),
                           ),
                         ],
                       ),
@@ -165,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 // Spending Chart
                 const Text(
-                  'Spending Overview',
+                  'Ringkasan Pengeluaran',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
@@ -177,7 +200,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
+                        // Replacing withOpacity with withValues
+                        color: Colors.grey.withValues(alpha: 26.0),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -206,13 +230,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             showTitles: true,
                             getTitlesWidget: (value, meta) {
                               const titles = [
-                                'Mon',
-                                'Tue',
-                                'Wed',
-                                'Thu',
-                                'Fri',
-                                'Sat',
-                                'Sun',
+                                'Sen',
+                                'Sel',
+                                'Rab',
+                                'Kam',
+                                'Jum',
+                                'Sab',
+                                'Min',
                               ];
                               return Padding(
                                 padding: const EdgeInsets.only(top: 8.0),
@@ -258,7 +282,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'Recent Transactions',
+                      'Transaksi Terakhir',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -268,7 +292,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       onPressed: () {
                         // Navigate to transactions screen
                       },
-                      child: const Text('See All'),
+                      child: const Text('Lihat Semua'),
                     ),
                   ],
                 ),
@@ -298,6 +322,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Color color,
   ) {
     return Row(
+      mainAxisSize: MainAxisSize.min, // Menggunakan minimum ruang yang diperlukan
       children: [
         Container(
           padding: const EdgeInsets.all(8),
@@ -308,23 +333,27 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Icon(icon, color: color, size: 20),
         ),
         const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(fontSize: 14, color: Colors.white70),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              currencyFormatter.format(amount),
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+        Flexible(  // Tambahkan Flexible di sini
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(fontSize: 14, color: Colors.white70),
+                overflow: TextOverflow.ellipsis, // Tambahkan ellipsis jika teks terlalu panjang
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                currencyFormatter.format(amount),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                overflow: TextOverflow.ellipsis, // Tambahkan ellipsis jika teks terlalu panjang
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -359,7 +388,8 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            // Replacing withOpacity with withValues
+            color: Colors.grey.withValues(alpha: 26),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -370,7 +400,8 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: transaction['color'].withOpacity(0.2),
+              // Fix: Convert int to double for alpha parameter
+              color: transaction['color'].withValues(alpha: 51.0),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -393,7 +424,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  DateFormat('dd MMM yyyy').format(transaction['date']),
+                  DateFormat('dd MMMM yyyy', 'id_ID').format(transaction['date']),
                   style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                 ),
               ],

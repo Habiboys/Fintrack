@@ -10,7 +10,8 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  // Changed to use super parameter
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +36,8 @@ class MyApp extends StatelessWidget {
 }
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+  // Changed to use super parameter
+  const MainScreen({super.key});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -59,7 +61,8 @@ class _MainScreenState extends State<MainScreen> {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
+              // Fixed: Convert int to double for alpha parameter
+              color: Colors.grey.withValues(alpha: 51.0), // 0.2 * 255 ≈ 51
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -81,11 +84,11 @@ class _MainScreenState extends State<MainScreen> {
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
             BottomNavigationBarItem(
               icon: Icon(Icons.swap_horiz),
-              label: 'Transactions',
+              label: 'Transaksi',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.pie_chart),
-              label: 'Budget',
+              label: 'Anggaran',
             ),
             BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
           ],

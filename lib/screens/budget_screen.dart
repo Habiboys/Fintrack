@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 
 class BudgetScreen extends StatefulWidget {
-  const BudgetScreen({Key? key}) : super(key: key);
+  // Fixed: Using super parameter for key
+  const BudgetScreen({super.key});
 
   @override
   State<BudgetScreen> createState() => _BudgetScreenState();
 }
 
 class _BudgetScreenState extends State<BudgetScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize date formatting for Indonesian locale
+    initializeDateFormatting('id_ID', null);
+  }
+
   final currencyFormatter = NumberFormat.currency(
     locale: 'id_ID',
     symbol: 'Rp ',
@@ -22,35 +31,35 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
   final List<Map<String, dynamic>> budgetCategories = [
     {
-      'name': 'Food',
+      'name': 'Makanan',
       'icon': Icons.restaurant,
       'color': Colors.orange,
       'budget': 1500000,
       'spent': 1250000,
     },
     {
-      'name': 'Transport',
+      'name': 'Transportasi',
       'icon': Icons.directions_car,
       'color': Colors.purple,
       'budget': 800000,
       'spent': 650000,
     },
     {
-      'name': 'Utilities',
+      'name': 'Utilitas',
       'icon': Icons.electric_bolt,
       'color': Colors.blue,
       'budget': 1000000,
       'spent': 800000,
     },
     {
-      'name': 'Shopping',
+      'name': 'Belanja',
       'icon': Icons.shopping_bag,
       'color': Colors.pink,
       'budget': 1200000,
       'spent': 400000,
     },
     {
-      'name': 'Entertainment',
+      'name': 'Hiburan',
       'icon': Icons.movie,
       'color': Colors.red,
       'budget': 500000,
@@ -66,7 +75,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Budget',
+          'Anggaran',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -93,7 +102,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   gradient: LinearGradient(
                     colors: [
                       Theme.of(context).primaryColor,
-                      Theme.of(context).primaryColor.withOpacity(0.8),
+                      // Fixed: Replaced withOpacity with withValues
+                      Theme.of(context).primaryColor.withValues(alpha: 204.0), // 0.8 * 255 = 204
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -101,7 +111,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Theme.of(context).primaryColor.withOpacity(0.3),
+                      // Fixed: Replaced withOpacity with withValues and converted int to double
+                      color: Theme.of(context).primaryColor.withValues(alpha: 77.0), // 0.3 * 255 = 77
+                      
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -110,7 +122,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 child: Column(
                   children: [
                     const Text(
-                      'Monthly Budget',
+                      'Anggaran Bulanan',
                       style: TextStyle(fontSize: 16, color: Colors.white70),
                     ),
                     const SizedBox(height: 16),
@@ -130,7 +142,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                             ),
                           ),
                           const Text(
-                            'Remaining',
+                            'Tersisa',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.white70,
@@ -140,7 +152,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       ),
                       progressColor:
                           remainingBudget < 0 ? Colors.red : Colors.white,
-                      backgroundColor: Colors.white.withOpacity(0.2),
+                      // Fixed: Replaced withOpacity with withValues
+                      backgroundColor: Colors.white.withValues(alpha: 51.0), // 0.2 * 255 = 51
                       circularStrokeCap: CircularStrokeCap.round,
                     ),
                     const SizedBox(height: 16),
@@ -148,11 +161,11 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         _buildBudgetSummaryItem(
-                          'Total Budget',
+                          'Total Anggaran',
                           currencyFormatter.format(totalBudget),
                         ),
                         _buildBudgetSummaryItem(
-                          'Total Spent',
+                          'Total Pengeluaran',
                           currencyFormatter.format(totalSpent),
                         ),
                       ],
@@ -167,16 +180,22 @@ class _BudgetScreenState extends State<BudgetScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Budget Categories',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  const Flexible(  // Add Flexible here to allow text to shrink if needed
+                    child: Text(
+                      'Kategori Anggaran',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,  // Add overflow handling
+                    ),
                   ),
                   TextButton.icon(
                     onPressed: () {
                       _showAddBudgetModal(context);
                     },
                     icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Add Budget'),
+                    label: const Text('Tambah Anggaran'),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),  // Reduce padding
+                    ),
                   ),
                 ],
               ),
@@ -197,7 +216,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(0.2),
+                  // Fixed: Replaced withOpacity with withValues
+                  color: Colors.amber.withValues(alpha: 51.0), // 0.2 * 255 = 51
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.amber, width: 1),
                 ),
@@ -209,7 +229,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                         const Icon(Icons.lightbulb, color: Colors.amber),
                         const SizedBox(width: 8),
                         const Text(
-                          'Budget Tip',
+                          'Tips Anggaran',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -219,7 +239,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Try the 50/30/20 rule: Spend 50% of your income on needs, 30% on wants, and save 20%.',
+                      'Coba aturan 50/30/20: Gunakan 50% penghasilan untuk kebutuhan, 30% untuk keinginan, dan simpan 20%.',
                       style: TextStyle(fontSize: 14),
                     ),
                   ],
@@ -270,7 +290,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            // Fixed: Replaced withOpacity with withValues
+            color: Colors.grey.withValues(alpha: 26.0), // 0.1 * 255 = 26
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -284,7 +305,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: category['color'].withOpacity(0.2),
+                  // Fixed: Replaced withOpacity with withValues
+                  color: category['color'].withValues(alpha: 51.0), // 0.2 * 255 = 51
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -307,7 +329,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${currencyFormatter.format(spent)} of ${currencyFormatter.format(budget)}',
+                      '${currencyFormatter.format(spent)} dari ${currencyFormatter.format(budget)}',
                       style: TextStyle(
                         fontSize: 14,
                         color: isOverBudget ? Colors.red : Colors.grey[600],
@@ -338,7 +360,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
           if (isOverBudget) ...[
             const SizedBox(height: 8),
             Text(
-              'Over budget by ${currencyFormatter.format(spent - budget)}',
+              'Melebihi anggaran sebesar ${currencyFormatter.format(spent - budget)}',
               style: const TextStyle(
                 fontSize: 12,
                 color: Colors.red,
@@ -353,20 +375,21 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
   void _showAddBudgetModal(BuildContext context) {
     final formKey = GlobalKey<FormState>();
-    String category = 'Food';
+    String category = 'Makanan';
+    // Fixed: Using the amount variable in the onPressed callback
     double amount = 0;
 
     final categories = [
-      {'name': 'Food', 'icon': Icons.restaurant, 'color': Colors.orange},
+      {'name': 'Makanan', 'icon': Icons.restaurant, 'color': Colors.orange},
       {
-        'name': 'Transport',
+        'name': 'Transportasi',
         'icon': Icons.directions_car,
         'color': Colors.purple,
       },
-      {'name': 'Utilities', 'icon': Icons.electric_bolt, 'color': Colors.blue},
-      {'name': 'Shopping', 'icon': Icons.shopping_bag, 'color': Colors.pink},
-      {'name': 'Entertainment', 'icon': Icons.movie, 'color': Colors.red},
-      {'name': 'Other', 'icon': Icons.more_horiz, 'color': Colors.grey},
+      {'name': 'Utilitas', 'icon': Icons.electric_bolt, 'color': Colors.blue},
+      {'name': 'Belanja', 'icon': Icons.shopping_bag, 'color': Colors.pink},
+      {'name': 'Hiburan', 'icon': Icons.movie, 'color': Colors.red},
+      {'name': 'Lainnya', 'icon': Icons.more_horiz, 'color': Colors.grey},
     ];
 
     showModalBottomSheet(
@@ -375,6 +398,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      backgroundColor: Colors.white, // Explicit for iOS
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
@@ -391,11 +415,24 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Add a drag indicator for iOS
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Add Budget',
+                          'Tambah Anggaran',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -413,7 +450,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
                     // Category Selection
                     const Text(
-                      'Category',
+                      'Kategori',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -439,8 +476,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
                                 decoration: BoxDecoration(
                                   color:
                                       category == c['name']
-                                          ? (c['color'] as Color).withOpacity(
-                                            0.2,
+                                          ? (c['color'] as Color).withValues(
+                                            alpha: 51.0, // 0.2 * 255 = 51
                                           )
                                           : Colors.grey[200],
                                   borderRadius: BorderRadius.circular(16),
@@ -483,18 +520,25 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
                     // Amount Field
                     TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Budget Amount',
+                      decoration: InputDecoration(
+                        labelText: 'Jumlah Anggaran',
                         prefixText: 'Rp ',
-                        border: OutlineInputBorder(),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10), // Rounded corners for iOS
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
                       ),
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true), // Better iOS keyboard
+                      
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter an amount';
+                          return 'Silakan masukkan jumlah';
                         }
                         if (double.tryParse(value) == null) {
-                          return 'Please enter a valid number';
+                          return 'Silakan masukkan angka yang valid';
                         }
                         return null;
                       },
@@ -511,11 +555,12 @@ class _BudgetScreenState extends State<BudgetScreen> {
                         onPressed: () {
                           if (formKey.currentState!.validate()) {
                             formKey.currentState!.save();
-                            // Add budget logic
+                            // Add budget logic - now using the amount variable
+debugPrint('Menambahkan anggaran: $category - Rp ${amount.toStringAsFixed(0)}');
                             Navigator.pop(context);
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Budget added successfully'),
+                                content: Text('Anggaran berhasil ditambahkan'),
                                 backgroundColor: Colors.green,
                               ),
                             );
@@ -524,7 +569,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: const Text('Save Budget'),
+                        child: const Text('Simpan Anggaran'),
                       ),
                     ),
                     const SizedBox(height: 16),

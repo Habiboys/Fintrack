@@ -2,10 +2,14 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fintrack/services/api_service.dart';
+import 'package:logger/logger.dart';
 
 class AuthService {
   // Remove the baseUrl definition and use ApiService.baseUrl instead
   // Update all instances of baseUrl to use ApiService.baseUrl
+  
+  // Initialize logger
+  final _logger = Logger();
 
   // Store JWT token
   Future<void> storeToken(String token) async {
@@ -33,8 +37,9 @@ class AuthService {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'username': username, 'password': password}),
       );
-      print('Register Response Status: ${response.statusCode}');
-      print('Register Response Body: ${response.body}');
+      // Replace print with logger
+      _logger.d('Login Response Status: ${response.statusCode}');
+      _logger.d('Login Response Body: ${response.body}');
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
@@ -50,6 +55,7 @@ class AuthService {
         };
       }
     } catch (e) {
+      _logger.e('Login error', error: e);
       return {'success': false, 'message': 'Network error: $e'};
     }
   }
@@ -73,9 +79,9 @@ class AuthService {
         }),
       );
 
-      // Tambahkan print untuk debugging
-      print('Register Response Status: ${response.statusCode}');
-      print('Register Response Body: ${response.body}');
+      // Replace print with logger
+      _logger.d('Register Response Status: ${response.statusCode}');
+      _logger.d('Register Response Body: ${response.body}');
 
       final responseData = json.decode(response.body);
 
@@ -88,6 +94,7 @@ class AuthService {
         };
       }
     } catch (e) {
+      _logger.e('Registration error', error: e);
       return {'success': false, 'message': 'Network error: $e'};
     }
   }
@@ -130,12 +137,14 @@ class AuthService {
                   : {},
         };
       } else {
+        _logger.w('Failed to get user profile: ${response.statusCode}');
         return {
           'success': false,
           'message': responseData['message'] ?? 'Failed to get user profile',
         };
       }
     } catch (e) {
+      _logger.e('Get current user error', error: e);
       return {'success': false, 'message': 'Network error: $e'};
     }
   }

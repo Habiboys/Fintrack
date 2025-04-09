@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  // Memperbaiki parameter key menjadi super parameter
+  const ProfileScreen({super.key});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -13,12 +15,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final currencyFormatter = NumberFormat.currency(
     locale: 'id_ID',
     symbol: 'Rp ',
+    decimalDigits: 0, // Remove decimal places for cleaner iOS display
   );
 
   // Sample data - in a real app, this would come from your database
   final Map<String, dynamic> user = {
-    'name': 'John Doe',
-    'email': 'john.doe@example.com',
+    'name': 'Nouval Habibie',
+    'email': 'nouval.habibie@example.com',
     'joinDate': DateTime(2023, 1, 15),
     'profileImage': null, // In a real app, this would be a URL or asset path
   };
@@ -34,29 +37,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   final List<Map<String, dynamic>> achievements = [
     {
-      'title': 'Budget Master',
-      'description': 'Stayed under budget for 3 consecutive months',
+      'title': 'Master Anggaran',
+      'description': 'Tetap di bawah anggaran selama 3 bulan berturut-turut',
       'icon': Icons.emoji_events,
       'color': Colors.amber,
       'completed': true,
     },
     {
-      'title': 'Saving Star',
-      'description': 'Saved more than 20% of income',
+      'title': 'Bintang Tabungan',
+      'description': 'Menabung lebih dari 20% pendapatan',
       'icon': Icons.star,
       'color': Colors.blue,
       'completed': true,
     },
     {
-      'title': 'Expense Tracker',
-      'description': 'Recorded expenses for 30 days straight',
+      'title': 'Pelacak Pengeluaran',
+      'description': 'Mencatat pengeluaran selama 30 hari berturut-turut',
       'icon': Icons.trending_down,
       'color': Colors.green,
       'completed': true,
     },
     {
-      'title': 'Financial Planner',
-      'description': 'Created and maintained 5 different budgets',
+      'title': 'Perencana Keuangan',
+      'description': 'Membuat dan memelihara 5 anggaran berbeda',
       'icon': Icons.account_balance,
       'color': Colors.purple,
       'completed': false,
@@ -64,11 +67,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // Inisialisasi format tanggal untuk bahasa Indonesia
+    initializeDateFormatting('id_ID', null);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Profile',
+          'Profil',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -93,9 +103,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     CircleAvatar(
                       radius: 50,
+                      // Memperbaiki withOpacity menjadi withValues
                       backgroundColor: Theme.of(
                         context,
-                      ).primaryColor.withOpacity(0.2),
+                      ).primaryColor.withValues(alpha: 51.0), // 0.2 * 255 = 51
                       child: Icon(
                         Icons.person,
                         size: 50,
@@ -117,7 +128,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Member since ${DateFormat('MMMM yyyy').format(user['joinDate'])}',
+                      'Anggota sejak ${DateFormat('MMMM yyyy', 'id_ID').format(user['joinDate'])}',
                       style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                     const SizedBox(height: 16),
@@ -126,7 +137,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         // Edit profile logic
                       },
                       icon: const Icon(Icons.edit),
-                      label: const Text('Edit Profile'),
+                      label: const Text('Edit Profil'),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
@@ -142,7 +153,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               // Financial Summary
               const Text(
-                'Financial Summary',
+                'Ringkasan Keuangan',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
@@ -153,7 +164,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
+                      // Memperbaiki withOpacity menjadi withValues
+                      color: Colors.grey.withValues(alpha: 26), // 0.1 * 255 = 26
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -216,7 +228,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               dotData: FlDotData(show: false),
                               belowBarData: BarAreaData(
                                 show: true,
-                                color: Colors.green.withOpacity(0.1),
+                                // Memperbaiki withOpacity menjadi withValues
+                                color: Colors.green.withValues(alpha: 26.0), // 0.1 * 255 = 26
                               ),
                             ),
                             // Expense Line
@@ -235,7 +248,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               dotData: FlDotData(show: false),
                               belowBarData: BarAreaData(
                                 show: true,
-                                color: Colors.red.withOpacity(0.1),
+                                // Memperbaiki withOpacity menjadi withValues
+                                color: Colors.red.withValues(alpha: 26.0), // 0.1 * 255 = 26
                               ),
                             ),
                           ],
@@ -247,9 +261,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _buildChartLegend('Income', Colors.green),
+                        _buildChartLegend('Pendapatan', Colors.green),
                         const SizedBox(width: 24),
-                        _buildChartLegend('Expense', Colors.red),
+                        _buildChartLegend('Pengeluaran', Colors.red),
                       ],
                     ),
                   ],
@@ -260,7 +274,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               // Achievements
               const Text(
-                'Achievements',
+                'Pencapaian',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
@@ -278,7 +292,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               // App Settings
               const Text(
-                'App Settings',
+                'Pengaturan Aplikasi',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
@@ -288,7 +302,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
+                      // Memperbaiki withOpacity menjadi withValues
+                      // Fixed: Convert int to double for alpha parameter
+                      color: Colors.grey.withValues(alpha: 26.0), // 0.1 * 255 = 26
+                      
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -297,7 +314,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   children: [
                     _buildSettingsItem(
-                      'Notifications',
+                      'Notifikasi',
                       Icons.notifications,
                       Colors.orange,
                       onTap: () {
@@ -306,7 +323,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const Divider(height: 1),
                     _buildSettingsItem(
-                      'Currency',
+                      'Mata Uang',
                       Icons.attach_money,
                       Colors.green,
                       onTap: () {
@@ -315,7 +332,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const Divider(height: 1),
                     _buildSettingsItem(
-                      'Security',
+                      'Keamanan',
                       Icons.security,
                       Colors.blue,
                       onTap: () {
@@ -324,7 +341,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const Divider(height: 1),
                     _buildSettingsItem(
-                      'Help & Support',
+                      'Bantuan & Dukungan',
                       Icons.help,
                       Colors.purple,
                       onTap: () {
@@ -333,7 +350,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const Divider(height: 1),
                     _buildSettingsItem(
-                      'Logout',
+                      'Keluar',
                       Icons.logout,
                       Colors.red,
                       onTap: () {
@@ -389,7 +406,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            // Memperbaiki withOpacity menjadi withValues
+            color: Colors.grey.withValues(alpha: 26), // 0.1 * 255 = 26
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -400,7 +418,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: achievement['color'].withOpacity(0.2),
+              // Memperbaiki withOpacity menjadi withValues
+              // Fixed: Convert int to double for alpha parameter
+              color: achievement['color'].withValues(alpha: 51.0), // 0.2 * 255 = 51
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -455,7 +475,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                // Memperbaiki withOpacity menjadi withValues
+                color: color.withValues(alpha: 51.0), // 0.2 * 255 = 51
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, color: color, size: 20),
