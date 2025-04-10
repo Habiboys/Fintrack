@@ -62,14 +62,14 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     // Get the safe area padding for iOS
-// Remove unused variable since SafeArea widget already handles padding
+    final safePadding = MediaQuery.of(context).padding;
     
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            // Adjust padding to account for iOS devices
-            padding: EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 16.0),
+            // Increase padding for iOS
+            padding: EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 16.0 + safePadding.bottom),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -297,6 +297,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
+                // Increase spacing before transaction list
+                const SizedBox(height: 16),
                 ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -322,27 +324,27 @@ class _HomeScreenState extends State<HomeScreen> {
     Color color,
   ) {
     return Row(
-      mainAxisSize: MainAxisSize.min, // Menggunakan minimum ruang yang diperlukan
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(10), // Increased from 8
           decoration: BoxDecoration(
             color: Colors.white24,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: color, size: 20),
         ),
-        const SizedBox(width: 12),
-        Flexible(  // Tambahkan Flexible di sini
+        const SizedBox(width: 14), // Increased from 12
+        Flexible(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 title,
                 style: const TextStyle(fontSize: 14, color: Colors.white70),
-                overflow: TextOverflow.ellipsis, // Tambahkan ellipsis jika teks terlalu panjang
+                overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6), // Increased from 4
               Text(
                 currencyFormatter.format(amount),
                 style: const TextStyle(
@@ -350,7 +352,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
-                overflow: TextOverflow.ellipsis, // Tambahkan ellipsis jika teks terlalu panjang
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -381,15 +383,16 @@ class _HomeScreenState extends State<HomeScreen> {
     Map<String, dynamic> transaction,
   ) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      // Increase bottom margin to create more space between items
+      margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            // Replacing withOpacity with withValues
-            color: Colors.grey.withValues(alpha: 26),
+            // Fix: Convert int to double for alpha parameter
+            color: Colors.grey.withValues(alpha: 26.0),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -400,7 +403,6 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              // Fix: Convert int to double for alpha parameter
               color: transaction['color'].withValues(alpha: 51.0),
               borderRadius: BorderRadius.circular(12),
             ),
@@ -410,7 +412,8 @@ class _HomeScreenState extends State<HomeScreen> {
               size: 24,
             ),
           ),
-          const SizedBox(width: 16),
+          // Increase horizontal spacing
+          const SizedBox(width: 20),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -422,7 +425,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 4),
+                // Increase vertical spacing
+                const SizedBox(height: 8),
                 Text(
                   DateFormat('dd MMMM yyyy', 'id_ID').format(transaction['date']),
                   style: TextStyle(fontSize: 14, color: Colors.grey[600]),
