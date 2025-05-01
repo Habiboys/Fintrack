@@ -65,6 +65,32 @@ class _HomeScreenState extends State<HomeScreen> {
     final safePadding = MediaQuery.of(context).padding;
     
     return Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        title: const Text(
+          'Beranda',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(5),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.grey.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -97,17 +123,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ],
                     ),
-                    CircleAvatar(
-                      radius: 24,
-                      // Fix: Convert int to double for alpha parameter
-                      backgroundColor: Theme.of(
-                        context,
-                      ).primaryColor.withValues(alpha: 51.0),
-                      child: Icon(
-                        Icons.person,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
                   ],
                 ),
 
@@ -121,8 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     gradient: LinearGradient(
                       colors: [
                         Theme.of(context).primaryColor,
-                        // Replacing withOpacity with withValues
-                        Theme.of(context).primaryColor.withValues(alpha: 204.0),
+                        Theme.of(context).primaryColor.withOpacity(0.8), // Changed to withOpacity
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -130,8 +144,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        // Replacing withOpacity with withValues
-                        color: Theme.of(context).primaryColor.withValues(alpha: 77.0),
+                        color: Theme.of(context).primaryColor.withOpacity(0.3), // Changed to withOpacity
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -200,10 +213,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        // Replacing withOpacity with withValues
-                        color: Colors.grey.withValues(alpha: 26.0),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+                        color: Colors.grey.withOpacity(0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
                       ),
                     ],
                   ),
@@ -296,13 +308,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                // Increase spacing before transaction list
                 const SizedBox(height: 16),
-                ListView.builder(
+                ListView.separated(  // Changed from ListView.builder
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: recentTransactions.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 16),  // Add spacing between items
                   itemBuilder: (context, index) {
                     final transaction = recentTransactions[index];
                     return _buildTransactionItem(context, transaction);
@@ -383,16 +394,14 @@ class _HomeScreenState extends State<HomeScreen> {
     Map<String, dynamic> transaction,
   ) {
     return Container(
-      // Increase bottom margin to create more space between items
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(16),
+      // Remove bottom margin since we're using ListView.separated
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            // Fix: Convert int to double for alpha parameter
-            color: Colors.grey.withValues(alpha: 26.0),
+            color: Colors.grey.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -401,18 +410,17 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: transaction['color'].withValues(alpha: 51.0),
+              color: transaction['color'].withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               transaction['icon'],
               color: transaction['color'],
-              size: 24,
+              size: 26,
             ),
           ),
-          // Increase horizontal spacing
           const SizedBox(width: 20),
           Expanded(
             child: Column(
@@ -422,10 +430,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   transaction['title'],
                   style: const TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                // Increase vertical spacing
                 const SizedBox(height: 8),
                 Text(
                   DateFormat('dd MMMM yyyy', 'id_ID').format(transaction['date']),

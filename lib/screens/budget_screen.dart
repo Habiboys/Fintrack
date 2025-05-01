@@ -72,21 +72,37 @@ class _BudgetScreenState extends State<BudgetScreen> {
     final remainingBudget = totalBudget - totalSpent;
     final budgetProgress = totalSpent / totalBudget;
 
-    return Scaffold(
+   return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
         title: const Text(
           'Anggaran',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: () {
-              // Navigate to budget history
-            },
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(5),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.grey.withValues(alpha: 51.0), // 0.2 * 255 = 51
+                  width: 1,
+                ),
+              ),
+            ),
           ),
-        ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddBudgetModal(context),
+        backgroundColor: Theme.of(context).primaryColor,
+        child: const Icon(Icons.add),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -102,8 +118,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   gradient: LinearGradient(
                     colors: [
                       Theme.of(context).primaryColor,
-                      // Fixed: Replaced withOpacity with withValues
-                      Theme.of(context).primaryColor.withValues(alpha: 204.0), // 0.8 * 255 = 204
+                      Theme.of(context).primaryColor.withOpacity(0.8), // Changed from withValues
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -111,9 +126,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      // Fixed: Replaced withOpacity with withValues and converted int to double
-                      color: Theme.of(context).primaryColor.withValues(alpha: 77.0), // 0.3 * 255 = 77
-                      
+                      color: Theme.of(context).primaryColor.withOpacity(0.3), // Changed from withValues
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -151,9 +164,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
                         ],
                       ),
                       progressColor:
-                          remainingBudget < 0 ? Colors.red : Colors.white,
-                      // Fixed: Replaced withOpacity with withValues
-                      backgroundColor: Colors.white.withValues(alpha: 51.0), // 0.2 * 255 = 51
+                          remainingBudget < 0 ? Colors.red : Colors.greenAccent, // Changed from white to greenAccent
+                      backgroundColor: Colors.white.withOpacity(0.2), // Changed from withValues to withOpacity
                       circularStrokeCap: CircularStrokeCap.round,
                     ),
                     const SizedBox(height: 16),
@@ -180,30 +192,20 @@ class _BudgetScreenState extends State<BudgetScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Flexible(  // Add Flexible here to allow text to shrink if needed
-                    child: Text(
-                      'Kategori Anggaran',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      overflow: TextOverflow.ellipsis,  // Add overflow handling
-                    ),
+                  const Text(
+                    'Kategori Anggaran',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  TextButton.icon(
-                    onPressed: () {
-                      _showAddBudgetModal(context);
-                    },
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Tambah Anggaran'),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),  // Reduce padding
-                    ),
-                  ),
+                  // TextButton.icon removed from here
                 ],
               ),
-              const SizedBox(height: 16),
-              ListView.builder(
+              const SizedBox(height: 24),
+              ListView.separated(  // Changed from ListView.builder to ListView.separated
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: budgetCategories.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 20),  // Adjust spacing as needed
                 itemBuilder: (context, index) {
                   final category = budgetCategories[index];
                   return _buildBudgetCategoryItem(context, category);
@@ -260,7 +262,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
           label,
           style: const TextStyle(fontSize: 14, color: Colors.white70),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 12),
         Text(
           value,
           style: const TextStyle(
@@ -283,15 +285,14 @@ class _BudgetScreenState extends State<BudgetScreen> {
     final bool isOverBudget = spent > budget;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
+      // Increase padding for larger boxes
+      padding: const EdgeInsets.all(24),  // Changed from 16 to 24
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),  // Increased from 12 to 16
         boxShadow: [
           BoxShadow(
-            // Fixed: Replaced withOpacity with withValues
-            color: Colors.grey.withValues(alpha: 26.0), // 0.1 * 255 = 26
+            color: Colors.grey.withOpacity(0.1),  // Changed from withValues to withOpacity
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -303,16 +304,15 @@ class _BudgetScreenState extends State<BudgetScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(12),  // Increased from 8 to 12
                 decoration: BoxDecoration(
-                  // Fixed: Replaced withOpacity with withValues
-                  color: category['color'].withValues(alpha: 51.0), // 0.2 * 255 = 51
-                  borderRadius: BorderRadius.circular(8),
+                  color: category['color'].withOpacity(0.2),  // Changed from withValues to withOpacity
+                  borderRadius: BorderRadius.circular(12),  // Increased from 8 to 12
                 ),
                 child: Icon(
                   category['icon'],
                   color: category['color'],
-                  size: 20,
+                  size: 28,  // Increased from 20 to 28
                 ),
               ),
               const SizedBox(width: 12),
@@ -567,9 +567,16 @@ debugPrint('Menambahkan anggaran: $category - Rp ${amount.toStringAsFixed(0)}');
                           }
                         },
                         style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).primaryColor,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: const Text('Simpan Anggaran'),
+                        child: const Text(
+                          'Simpan Anggaran',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),

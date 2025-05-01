@@ -75,21 +75,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+  return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
         title: const Text(
           'Profil',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              // Navigate to settings
-            },
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(5),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.grey.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+            ),
           ),
-        ],
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -132,19 +144,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                     const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        // Edit profile logic
-                      },
-                      icon: const Icon(Icons.edit),
-                      label: const Text('Edit Profil'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
+                   
                   ],
                 ),
               ),
@@ -164,10 +164,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      // Memperbaiki withOpacity menjadi withValues
-                      color: Colors.grey.withValues(alpha: 26), // 0.1 * 255 = 26
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+                      color: Colors.grey.withValues(alpha: 15), // Reduced from 26 to 15
+                      blurRadius: 6, // Reduced from 10 to 6
+                      offset: const Offset(0, 2), // Reduced from 4 to 2
                     ),
                   ],
                 ),
@@ -278,10 +277,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
-              ListView.builder(
+              ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: achievements.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 16),
                 itemBuilder: (context, index) {
                   final achievement = achievements[index];
                   return _buildAchievementItem(context, achievement);
@@ -296,69 +296,91 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      // Memperbaiki withOpacity menjadi withValues
-                      // Fixed: Convert int to double for alpha parameter
-                      color: Colors.grey.withValues(alpha: 26.0), // 0.1 * 255 = 26
-                      
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: 5,
+                separatorBuilder: (context, index) => const SizedBox(height: 16),
+                itemBuilder: (context, index) {
+                  final settings = [
+                    {
+                      'title': 'Notifikasi',
+                      'icon': Icons.notifications,
+                      'color': Colors.orange,
+                    },
+                    {
+                      'title': 'Mata Uang',
+                      'icon': Icons.attach_money,
+                      'color': Colors.green,
+                    },
+                    {
+                      'title': 'Keamanan',
+                      'icon': Icons.security,
+                      'color': Colors.blue,
+                    },
+                    {
+                      'title': 'Bantuan & Dukungan',
+                      'icon': Icons.help,
+                      'color': Colors.purple,
+                    },
+                    {
+                      'title': 'Keluar',
+                      'icon': Icons.logout,
+                      'color': Colors.red,
+                    },
+                  ];
+                  
+                  final setting = settings[index];
+                  return Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    _buildSettingsItem(
-                      'Notifikasi',
-                      Icons.notifications,
-                      Colors.orange,
+                    child: InkWell(
                       onTap: () {
-                        // Navigate to notifications settings
+                        // Handle tap for each setting
                       },
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: (setting['color'] as Color?)?.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              setting['icon'] as IconData,
+                              color: setting['color'] as Color?,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Text(
+                              setting['title'] as String,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            color: Colors.grey[400],
+                          ),
+                        ],
+                      ),
                     ),
-                    const Divider(height: 1),
-                    _buildSettingsItem(
-                      'Mata Uang',
-                      Icons.attach_money,
-                      Colors.green,
-                      onTap: () {
-                        // Navigate to currency settings
-                      },
-                    ),
-                    const Divider(height: 1),
-                    _buildSettingsItem(
-                      'Keamanan',
-                      Icons.security,
-                      Colors.blue,
-                      onTap: () {
-                        // Navigate to security settings
-                      },
-                    ),
-                    const Divider(height: 1),
-                    _buildSettingsItem(
-                      'Bantuan & Dukungan',
-                      Icons.help,
-                      Colors.purple,
-                      onTap: () {
-                        // Navigate to help & support
-                      },
-                    ),
-                    const Divider(height: 1),
-                    _buildSettingsItem(
-                      'Keluar',
-                      Icons.logout,
-                      Colors.red,
-                      onTap: () {
-                        // Logout logic
-                      },
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
 
               const SizedBox(height: 24),
@@ -399,15 +421,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Map<String, dynamic> achievement,
   ) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            // Memperbaiki withOpacity menjadi withValues
-            color: Colors.grey.withValues(alpha: 26), // 0.1 * 255 = 26
+            color: Colors.grey.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -416,11 +436,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              // Memperbaiki withOpacity menjadi withValues
-              // Fixed: Convert int to double for alpha parameter
-              color: achievement['color'].withValues(alpha: 51.0), // 0.2 * 255 = 51
+              color: achievement['color'].withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -438,7 +456,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   achievement['title'],
                   style: const TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -454,6 +472,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ? Icons.check_circle
                 : Icons.radio_button_unchecked,
             color: achievement['completed'] ? Colors.green : Colors.grey,
+            size: 24,
           ),
         ],
       ),

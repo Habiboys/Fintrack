@@ -3,7 +3,7 @@ import 'package:fintrack/services/auth_service.dart';
 import 'package:fintrack/widgets/custom_text_field.dart';
 import 'package:fintrack/widgets/auth_button.dart';
 import 'package:fintrack/screens/register_screen.dart';
-import 'package:fintrack/screens/home_screen.dart';
+// import 'package:fintrack/screens/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   // Using super parameter syntax
@@ -53,9 +53,13 @@ class LoginScreenState extends State<LoginScreen> {
       });
 
       if (result['success']) {
-        Navigator.of(
-          context,
-        ).pushReplacement(MaterialPageRoute(builder: (_) => HomeScreen()));
+        // When login is successful, make sure you're using:
+        Navigator.pushReplacementNamed(context, '/main');
+        
+        // Instead of:
+        // Navigator.pushNamed(context, '/main');
+        // or
+        // Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen()));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

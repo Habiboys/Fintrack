@@ -38,6 +38,9 @@ dependencies:
   provider: ^6.0.5
   http: ^1.1.0
   logger: ^2.0.2+1
+  salomon_bottom_bar: ^3.3.2
+  animated_bottom_navigation_bar: ^1.4.0
+  awesome_bottom_bar: ^1.2.4
 
 
 dev_dependencies:

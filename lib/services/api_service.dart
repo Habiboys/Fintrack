@@ -1,10 +1,14 @@
+import 'dart:io' show Platform;
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:fintrack/services/auth_service.dart';
 
 class ApiService {
-  // Replace with your actual API base URL
-  static String baseUrl = 'http://127.0.0.1:3000/api';
+  // For Android emulator, use 10.0.2.2 instead of localhost
+  // For iOS simulator, use localhost
+  static String baseUrl = Platform.isAndroid 
+      ? 'http://10.0.2.2:3000/api'
+      : 'http://localhost:3000/api';
   final AuthService _authService = AuthService();
 
   // Headers for API requests
