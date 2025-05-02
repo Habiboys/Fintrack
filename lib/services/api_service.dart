@@ -4,8 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:fintrack/services/auth_service.dart';
 
 class ApiService {
-  // For Android emulator, use 10.0.2.2 instead of localhost
-  // For iOS simulator, use localhost
+  // Base URL using localhost for all platforms
   static String baseUrl = Platform.isAndroid 
       ? 'http://10.0.2.2:3000/api'
       : 'http://localhost:3000/api';
