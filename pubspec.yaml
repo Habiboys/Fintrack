@@ -35,12 +35,12 @@ dependencies:
   fl_chart: ^0.65.0  # atau versi terbaru yang tersedia# Downgraded from 0.62.0 to a more stable version
   percent_indicator: ^4.2.3
   shared_preferences: ^2.1.1
-  provider: ^6.0.5
   http: ^1.1.0
   logger: ^2.0.2+1
-  salomon_bottom_bar: ^3.3.2
-  animated_bottom_navigation_bar: ^1.4.0
   awesome_bottom_bar: ^1.2.4
+  flutter_native_splash: ^2.4.6
+  flutter_launcher_icons: ^0.14.3
+  flutter_slidable: ^4.0.0
 
 
 dev_dependencies:
@@ -103,3 +103,6 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+  assets:
+    - assets/

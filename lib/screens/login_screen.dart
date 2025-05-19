@@ -1,19 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:fintrack/services/auth_service.dart';
-import 'package:fintrack/widgets/custom_text_field.dart';
-import 'package:fintrack/widgets/auth_button.dart';
+import 'package:fintrack/widgets/custom_input.dart';
 import 'package:fintrack/screens/register_screen.dart';
-// import 'package:fintrack/screens/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  // Using super parameter syntax
   const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => LoginScreenState();
 }
 
-// Changed from _LoginScreenState to LoginScreenState (removing the underscore)
 class LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
@@ -53,13 +49,8 @@ class LoginScreenState extends State<LoginScreen> {
       });
 
       if (result['success']) {
-        // When login is successful, make sure you're using:
+        // Pastikan token disimpan dengan benar di AuthService
         Navigator.pushReplacementNamed(context, '/main');
-        
-        // Instead of:
-        // Navigator.pushNamed(context, '/main');
-        // or
-        // Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen()));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -74,6 +65,7 @@ class LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -84,90 +76,113 @@ class LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Logo or App Name
-                  // Icon(
-                  //   Icons.account_balance_wallet,
-                  //   size: 80,
-                  //   color: Theme.of(context).primaryColor,
-                  // ),
-                  const SizedBox(height: 16),
+                  // Logo dan ilustrasi
+                  Image.asset(
+                    'assets/logofintrack.png',
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.contain,
+                  ),
+                  const SizedBox(height: 1),
                   Text(
                     'FinTrack',
                     style: TextStyle(
-                      fontSize: 28,
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).primaryColor,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'Login to your account',
-                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                  Container(
+                    width: 200,
+                    alignment: Alignment.center,
+                    child: Text(
+                      'Kelola keuangan Anda dengan lebih mudah',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                        height: 1.5,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 40),
 
-                  // Username Field
-                  CustomTextField(
-                    controller: _usernameController,
-                    labelText: 'Username',
-                    hintText: 'Enter your username',
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your username';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
+                  // Form login
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Masuk',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
 
-                  // Password Field
-                  CustomTextField(
-                    controller: _passwordController,
-                    labelText: 'Password',
-                    hintText: 'Enter your password',
-                    obscureText: _obscurePassword,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      }
-                      // if (value.length < 6) {
-                      //   return 'Password must be at least 6 characters';
-                      // }
-                      return null;
-                    },
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                        color: Colors.grey,
-                      ),
-                      onPressed: _togglePasswordVisibility,
+                        // Username Field
+                        CustomTextField(
+                          label: 'Username',
+                          hint: 'Masukkan username Anda',
+                          prefixIcon: Icons.person_outline,
+                          controller: _usernameController,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Username tidak boleh kosong';
+                            }
+                            return null;
+                          },
+                          isRequired: true,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Password Field
+                        CustomTextField(
+                          label: 'Password',
+                          hint: 'Masukkan password Anda',
+                          prefixIcon: Icons.lock_outline,
+                          obscureText: _obscurePassword,
+                          controller: _passwordController,
+                          suffixIcon:
+                              _obscurePassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                          onSuffixIconTap: _togglePasswordVisibility,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Password tidak boleh kosong';
+                            }
+                            return null;
+                          },
+                          isRequired: true,
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Login Button
+                        CustomButton(
+                          text: 'Masuk',
+                          icon: Icons.login,
+                          isLoading: _isLoading,
+                          onPressed: _login,
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
 
-                  // Forgot Password
-                  // Align(
-                  //   alignment: Alignment.centerRight,
-                  //   child: TextButton(
-                  //     onPressed: () {
-                  //       // Navigate to forgot password screen
-                  //     },
-                  //     child: Text(
-                  //       'Forgot Password?',
-                  //       style: TextStyle(color: Theme.of(context).primaryColor),
-                  //     ),
-                  //   ),
-                  // ),
-                  const SizedBox(height: 24),
-
-                  // Login Button
-                  AuthButton(
-                    text: 'Login',
-                    onPressed: _login,
-                    isLoading: _isLoading,
-                  ),
                   const SizedBox(height: 24),
 
                   // Register Link
@@ -175,17 +190,19 @@ class LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        "Don't have an account? ",
-                        style: TextStyle(color: Colors.grey.shade600),
+                        "Belum punya akun? ",
+                        style: TextStyle(color: Colors.grey[600]),
                       ),
                       GestureDetector(
                         onTap: () {
                           Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => RegisterScreen()),
+                            MaterialPageRoute(
+                              builder: (_) => const RegisterScreen(),
+                            ),
                           );
                         },
                         child: Text(
-                          'Register',
+                          'Daftar Sekarang',
                           style: TextStyle(
                             color: Theme.of(context).primaryColor,
                             fontWeight: FontWeight.bold,

@@ -7,7 +7,7 @@ import 'package:logger/logger.dart';
 class AuthService {
   // Remove the baseUrl definition and use ApiService.baseUrl instead
   // Update all instances of baseUrl to use ApiService.baseUrl
-  
+
   // Initialize logger
   final _logger = Logger();
 
@@ -43,9 +43,9 @@ class AuthService {
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        // Store the token
-        if (responseData['token'] != null) {
-          await storeToken(responseData['token']);
+        // Store the token - perbaikan di sini
+        if (responseData['jwt_token'] != null) {
+          await storeToken(responseData['jwt_token']);
         }
         return {'success': true, 'data': responseData};
       } else {
@@ -101,8 +101,31 @@ class AuthService {
 
   // Check if user is authenticated
   Future<bool> isAuthenticated() async {
-    final token = await getToken();
-    return token != null;
+    try {
+      final token = await getToken();
+
+      // Jika tidak ada token, user tidak terotentikasi
+      if (token == null) {
+        return false;
+      }
+
+      // Coba ambil profile pengguna untuk memastikan token valid
+      final response = await http.get(
+        Uri.parse('${ApiService.baseUrl}/auth/profile'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      _logger.d('Token validation status: ${response.statusCode}');
+
+      // Jika response 200 OK, token valid
+      return response.statusCode == 200;
+    } catch (e) {
+      _logger.e('Error validating token', error: e);
+      return false;
+    }
   }
 
   // Logout
@@ -115,20 +138,38 @@ class AuthService {
     try {
       final token = await getToken();
       if (token == null) {
+        _logger.w('Tidak ada token yang tersimpan.');
         return {'success': false, 'message': 'Not authenticated'};
       }
 
       final response = await http.get(
-        Uri.parse('${ApiService.baseUrl}/auth/user'),
+        Uri.parse('${ApiService.baseUrl}/auth/profile'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       );
 
-      final responseData = json.decode(response.body);
+      // Log response untuk debugging
+      _logger.d('User profile response status: ${response.statusCode}');
+      _logger.d('User profile response body: ${response.body}');
+
+      // Cek apakah respons merupakan JSON yang valid
+      dynamic responseData;
+      try {
+        responseData = json.decode(response.body);
+      } catch (e) {
+        _logger.e('Invalid JSON response', error: e);
+        return {
+          'success': false,
+          'message': 'Invalid response format: ${response.body}',
+        };
+      }
 
       if (response.statusCode == 200) {
+        // Tambahkan log sukses
+        _logger.i('User profile fetched successfully');
+
         return {
           'success': true,
           'data':
@@ -137,10 +178,13 @@ class AuthService {
                   : {},
         };
       } else {
-        _logger.w('Failed to get user profile: ${response.statusCode}');
+        _logger.w(
+          'Failed to get user profile: ${response.statusCode}, message: ${responseData['message'] ?? 'Unknown error'}',
+        );
         return {
           'success': false,
           'message': responseData['message'] ?? 'Failed to get user profile',
+          'status_code': response.statusCode,
         };
       }
     } catch (e) {

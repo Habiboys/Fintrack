@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:fintrack/services/auth_service.dart';
-import 'package:fintrack/widgets/custom_text_field.dart';
-import 'package:fintrack/widgets/auth_button.dart';
-// import 'package:fintrack/screens/login_screen.dart';
+import 'package:fintrack/widgets/custom_input.dart';
 
 class RegisterScreen extends StatefulWidget {
-  // Using super parameter syntax
   const RegisterScreen({super.key});
 
   @override
   State<RegisterScreen> createState() => RegisterScreenState();
 }
 
-// Changed from _RegisterScreenState to RegisterScreenState (removing the underscore)
 class RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
@@ -68,8 +64,8 @@ class RegisterScreenState extends State<RegisterScreen> {
 
       if (result['success']) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Registration successful! Please login.'),
+          const SnackBar(
+            content: Text('Pendaftaran berhasil! Silakan login.'),
             backgroundColor: Colors.green,
           ),
         );
@@ -88,13 +84,13 @@ class RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Rest of the build method remains the same
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).primaryColor),
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -105,137 +101,153 @@ class RegisterScreenState extends State<RegisterScreen> {
             child: Form(
               key: _formKey,
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Logo or App Name
-                  // Icon(
-                  //   Icons.account_balance_wallet,
-                  //   size: 60,
-                  //   color: Theme.of(context).primaryColor,
-                  // ),
-                  const SizedBox(height: 16),
+                  // Header
                   Text(
-                    'Create Account',
+                    'Buat Akun Baru',
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).primaryColor,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Sign up to get started',
-                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                    'Lengkapi data diri Anda untuk memulai',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 32),
 
-                  // Name Field
-                  CustomTextField(
-                    controller: _usernameController,
-                    labelText: 'username',
-                    hintText: 'Enter your username',
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your username';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  CustomTextField(
-                    controller: _fullnameController,
-                    labelText: 'Full Name',
-                    hintText: 'Enter your full name',
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your full name';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Email Field
-                  CustomTextField(
-                    controller: _emailController,
-                    labelText: 'Email',
-                    hintText: 'Enter your email',
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!RegExp(
-                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                      ).hasMatch(value)) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Password Field
-                  CustomTextField(
-                    controller: _passwordController,
-                    labelText: 'Password',
-                    hintText: 'Enter your password',
-                    obscureText: _obscurePassword,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      }
-                      if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
-                      return null;
-                    },
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                        color: Colors.grey,
-                      ),
-                      onPressed: _togglePasswordVisibility,
+                  // Form Pendaftaran
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Username Field
+                        CustomTextField(
+                          label: 'Username',
+                          hint: 'Masukkan username Anda',
+                          prefixIcon: Icons.account_circle_outlined,
+                          controller: _usernameController,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Username tidak boleh kosong';
+                            }
+                            return null;
+                          },
+                          isRequired: true,
+                        ),
+                        const SizedBox(height: 16),
 
-                  // Confirm Password Field
-                  CustomTextField(
-                    controller: _confirmPasswordController,
-                    labelText: 'Confirm Password',
-                    hintText: 'Confirm your password',
-                    obscureText: _obscureConfirmPassword,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please confirm your password';
-                      }
-                      if (value != _passwordController.text) {
-                        return 'Passwords do not match';
-                      }
-                      return null;
-                    },
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureConfirmPassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                        color: Colors.grey,
-                      ),
-                      onPressed: _toggleConfirmPasswordVisibility,
+                        // Full Name Field
+                        CustomTextField(
+                          label: 'Nama Lengkap',
+                          hint: 'Masukkan nama lengkap Anda',
+                          prefixIcon: Icons.person_outline,
+                          controller: _fullnameController,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Nama lengkap tidak boleh kosong';
+                            }
+                            return null;
+                          },
+                          isRequired: true,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Email Field
+                        CustomTextField(
+                          label: 'Email',
+                          hint: 'Masukkan email Anda',
+                          prefixIcon: Icons.email_outlined,
+                          keyboardType: TextInputType.emailAddress,
+                          controller: _emailController,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Email tidak boleh kosong';
+                            }
+                            if (!RegExp(
+                              r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                            ).hasMatch(value)) {
+                              return 'Masukkan email yang valid';
+                            }
+                            return null;
+                          },
+                          isRequired: true,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Password Field
+                        CustomTextField(
+                          label: 'Password',
+                          hint: 'Masukkan password Anda',
+                          prefixIcon: Icons.lock_outline,
+                          obscureText: _obscurePassword,
+                          controller: _passwordController,
+                          suffixIcon:
+                              _obscurePassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                          onSuffixIconTap: _togglePasswordVisibility,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Password tidak boleh kosong';
+                            }
+                            if (value.length < 6) {
+                              return 'Password minimal 6 karakter';
+                            }
+                            return null;
+                          },
+                          isRequired: true,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Confirm Password Field
+                        CustomTextField(
+                          label: 'Konfirmasi Password',
+                          hint: 'Masukkan ulang password Anda',
+                          prefixIcon: Icons.lock_outline,
+                          obscureText: _obscureConfirmPassword,
+                          controller: _confirmPasswordController,
+                          suffixIcon:
+                              _obscureConfirmPassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                          onSuffixIconTap: _toggleConfirmPasswordVisibility,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Konfirmasi password tidak boleh kosong';
+                            }
+                            if (value != _passwordController.text) {
+                              return 'Password tidak cocok';
+                            }
+                            return null;
+                          },
+                          isRequired: true,
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Register Button
+                        CustomButton(
+                          text: 'Daftar',
+                          icon: Icons.app_registration,
+                          isLoading: _isLoading,
+                          onPressed: _register,
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Register Button
-                  AuthButton(
-                    text: 'Register',
-                    onPressed: _register,
-                    isLoading: _isLoading,
                   ),
                   const SizedBox(height: 24),
 
@@ -244,15 +256,15 @@ class RegisterScreenState extends State<RegisterScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        "Already have an account? ",
-                        style: TextStyle(color: Colors.grey.shade600),
+                        "Sudah memiliki akun? ",
+                        style: TextStyle(color: Colors.grey[600]),
                       ),
                       GestureDetector(
                         onTap: () {
                           Navigator.of(context).pop();
                         },
                         child: Text(
-                          'Login',
+                          'Masuk',
                           style: TextStyle(
                             color: Theme.of(context).primaryColor,
                             fontWeight: FontWeight.bold,

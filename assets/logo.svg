@@ -1,0 +1,16 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Circle background -->
+  <circle cx="100" cy="100" r="90" fill="white"/>
+  
+  <!-- F letter stylized for Finance -->
+  <path d="M65,50 L135,50 L135,70 L85,70 L85,90 L125,90 L125,110 L85,110 L85,150 L65,150 Z" fill="#00773A"/>
+  
+  <!-- Money/Growth symbol -->
+  <path d="M150,120 L130,80 L110,100 L90,80 L70,100 L50,80 L50,130 L150,130 Z" fill="#00773A" fill-opacity="0.6"/>
+  
+  <!-- Coin circle -->
+  <circle cx="140" cy="70" r="20" fill="#00773A" fill-opacity="0.8"/>
+  
+  <!-- $ sign -->
+  <text x="140" y="75" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle" fill="white">$</text>
+</svg> 

@@ -1,0 +1,33 @@
+flutter_native_splash:
+  # Warna latar belakang splash screen - diubah menjadi putih
+  color: "#FFFFFF"
+  
+  # Gambar logo di tengah splash screen
+  # Menggunakan logo yang diberikan pengguna
+  image: assets/logofintrack.png
+  
+  # Untuk dark mode (opsional)
+  color_dark: "#FFFFFF"
+  image_dark: assets/logofintrack.png
+  
+  # Fullscreen mode 
+  fullscreen: true
+  
+  # Platform yang didukung
+  android: true
+  ios: true
+  web: false
+  
+  # Anda juga dapat mengatur background_image jika menginginkan gambar latar belakang
+  # background_image: assets/background.png
+  
+  # Splash screen akan tetap aktif hingga aplikasi selesai memuat (Android 12+)
+  android_12:
+    # Gambar untuk splash screen Android 12
+    image: assets/logofintrack.png
+    color: "#FFFFFF"
+    icon_background_color: "#FFFFFF"
+    
+  # Info tambahan
+  info_plist_files:
+    - 'ios/Runner/Info.plist' 

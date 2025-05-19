@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:logger/logger.dart';
+import 'package:fintrack/services/transaction_service.dart';
+import 'package:fintrack/services/category_service.dart';
+import 'package:fintrack/services/account_service.dart';
+import 'package:fintrack/widgets/slidable_item.dart';
+import 'package:fintrack/widgets/transaction_card.dart';
+import 'package:fintrack/widgets/transaction_slidable.dart';
+import 'package:fintrack/widgets/custom_input.dart';
+import 'package:flutter/services.dart';
 
 class TransactionScreen extends StatefulWidget {
-  // Fixed: Using super parameter for key
   const TransactionScreen({super.key});
 
   @override
@@ -18,84 +25,149 @@ class _TransactionScreenState extends State<TransactionScreen>
     locale: 'id_ID',
     symbol: 'Rp ',
   );
-  
-  // Initialize logger
+
+  // Initialize services
+  final TransactionService _transactionService = TransactionService();
+  final CategoryService _categoryService = CategoryService();
+  final AccountService _accountService = AccountService();
   final logger = Logger();
+
+  // Data state
+  List<Map<String, dynamic>> transactions = [];
+  List<Map<String, dynamic>> categories = [];
+  List<Map<String, dynamic>> accounts = [];
+  bool isLoading = true;
+  String errorMessage = '';
+
+  // State untuk form transaksi
+  Map<String, dynamic> _selectedCategory = {};
+  String _transactionType = 'expense';
+  String _amount = '';
+  String _description = '';
+  DateTime _transactionDate = DateTime.now();
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    // Initialize date formatting for Indonesian locale
     initializeDateFormatting('id_ID', null);
+    _loadData(); // Load data saat inisialisasi
   }
 
-  // Sample data - in a real app, this would come from your database
-  final List<Map<String, dynamic>> transactions = [
-    {
-      'title': 'Belanja Bahan Makanan',
-      'amount': 350000,
-      'date': DateTime.now().subtract(const Duration(days: 1)),
-      'isExpense': true,
-      'category': 'Makanan',
-      'icon': Icons.shopping_basket,
-      'color': Colors.orange,
-    },
-    {
-      'title': 'Gaji Bulanan',
-      'amount': 8500000,
-      'date': DateTime.now().subtract(const Duration(days: 3)),
-      'isExpense': false,
-      'category': 'Pendapatan',
-      'icon': Icons.account_balance_wallet,
-      'color': Colors.green,
-    },
-    {
-      'title': 'Tagihan Listrik',
-      'amount': 450000,
-      'date': DateTime.now().subtract(const Duration(days: 5)),
-      'isExpense': true,
-      'category': 'Utilitas',
-      'icon': Icons.electric_bolt,
-      'color': Colors.blue,
-    },
-    {
-      'title': 'Makan Malam dengan Teman',
-      'amount': 275000,
-      'date': DateTime.now().subtract(const Duration(days: 7)),
-      'isExpense': true,
-      'category': 'Makanan',
-      'icon': Icons.restaurant,
-      'color': Colors.orange,
-    },
-    {
-      'title': 'Proyek Freelance',
-      'amount': 2500000,
-      'date': DateTime.now().subtract(const Duration(days: 10)),
-      'isExpense': false,
-      'category': 'Pendapatan',
-      'icon': Icons.work,
-      'color': Colors.green,
-    },
-    {
-      'title': 'Tagihan Internet',
-      'amount': 350000,
-      'date': DateTime.now().subtract(const Duration(days: 12)),
-      'isExpense': true,
-      'category': 'Utilitas',
-      'icon': Icons.wifi,
-      'color': Colors.blue,
-    },
-    {
-      'title': 'Transportasi',
-      'amount': 125000,
-      'date': DateTime.now().subtract(const Duration(days: 14)),
-      'isExpense': true,
-      'category': 'Transportasi',
-      'icon': Icons.directions_car,
-      'color': Colors.purple,
-    },
-  ];
+  // Fungsi untuk memuat data transaksi, kategori, dan rekening
+  Future<void> _loadData() async {
+    try {
+      if (mounted) {
+        setState(() {
+          isLoading = true;
+          errorMessage = '';
+        });
+      }
+
+      // Muat kategori terlebih dahulu
+      final categoriesData = await _categoryService.getCategories();
+      if (mounted) {
+        setState(() {
+          categories = categoriesData;
+        });
+      }
+
+      // Muat rekening
+      try {
+        final accountsData = await _accountService.getAccounts();
+        if (mounted) {
+          setState(() {
+            accounts = accountsData;
+          });
+        }
+      } catch (e) {
+        logger.w('Tidak dapat memuat rekening: $e');
+        // Lanjutkan meskipun rekening gagal dimuat
+      }
+
+      // Terakhir muat transaksi
+      final transactionsData = await _transactionService.getTransactions();
+      if (mounted) {
+        setState(() {
+          transactions = transactionsData;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      logger.e('Error loading data', error: e);
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          errorMessage = 'Gagal memuat data: $e';
+        });
+      }
+    }
+  }
+
+  // Fungsi untuk membuat transaksi baru
+  Future<void> _createTransaction(Map<String, dynamic> transactionData) async {
+    try {
+      // Pastikan data transaksi lengkap
+      final dataToSend = {
+        'amount': transactionData['amount'].toString(),
+        'description': transactionData['description'],
+        'category_id': transactionData['category_id'],
+        'transaction_date': transactionData['date'],
+        'transaction_type': transactionData['type'],
+      };
+
+      // Tambahkan account_id jika disediakan
+      if (transactionData.containsKey('account_id') &&
+          transactionData['account_id'] != null &&
+          transactionData['account_id'].isNotEmpty) {
+        dataToSend['account_id'] = transactionData['account_id'];
+      }
+
+      logger.d('Mengirim data transaksi: $dataToSend');
+
+      // Kirim ke API
+      await _transactionService.createTransaction(dataToSend);
+
+      // Reload data setelah membuat transaksi baru
+      await _loadData();
+
+      // Tampilkan notifikasi sukses
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Transaksi berhasil ditambahkan')),
+        );
+      }
+    } catch (e) {
+      logger.e('Error creating transaction', error: e);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal membuat transaksi: $e')));
+      }
+    }
+  }
+
+  Future<void> _deleteTransaction(String id) async {
+    try {
+      await _transactionService.deleteTransaction(id);
+      _loadData();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Transaksi berhasil dihapus')),
+        );
+      }
+    } catch (e) {
+      logger.e('Error deleting transaction', error: e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menghapus transaksi: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -110,14 +182,37 @@ class _TransactionScreenState extends State<TransactionScreen>
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
-        title: const Text(
-          'Transaksi',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+        automaticallyImplyLeading: false,
+        centerTitle: false,
+        title: Padding(
+          padding: const EdgeInsets.only(left: 8.0),
+          child: Text(
+            'Transaksi',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).primaryColor,
+            ),
           ),
         ),
-        centerTitle: true,
+        actions: [
+          // Tombol akses cepat ke rekening
+          IconButton(
+            icon: Icon(
+              Icons.account_balance_wallet,
+              color: Theme.of(context).primaryColor,
+            ),
+            tooltip: 'Kelola Rekening',
+            onPressed: () {
+              Navigator.pushNamed(context, '/account').then((_) {
+                // Muat ulang data ketika kembali dari halaman rekening
+                if (mounted) {
+                  _loadData();
+                }
+              });
+            },
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(40),
           child: Container(
@@ -161,616 +256,816 @@ class _TransactionScreenState extends State<TransactionScreen>
         children: [
           _buildTransactionList(transactions),
           _buildTransactionList(
-            transactions.where((t) => !t['isExpense']).toList(),
+            transactions
+                .where((t) => t['transaction_type'] == 'income')
+                .toList(),
           ),
           _buildTransactionList(
-            transactions.where((t) => t['isExpense']).toList(),
+            transactions
+                .where((t) => t['transaction_type'] == 'expense')
+                .toList(),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddTransactionModal(context),
+        onPressed: () => _showAddTransactionDialog(context),
         backgroundColor: Theme.of(context).primaryColor,
         child: const Icon(Icons.add),
       ),
     );
   }
 
-  Widget _buildTransactionList(List<Map<String, dynamic>> transactions) {
-    if (transactions.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.receipt_long_outlined,
-              size: 80,
-              color: Colors.grey[400],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Tidak ada transaksi',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
+  // Dialog untuk menambah transaksi baru
+  void _showAddTransactionDialog(BuildContext context) {
+    final formKey = GlobalKey<FormState>();
+    String amount = '';
+    String description = '';
+    String categoryId = '';
+    String accountId = '';
+    String transactionType = 'expense';
+    DateTime selectedDate = DateTime.now();
+
+    // Periksa apakah kategori sudah dimuat
+    if (categories.isEmpty) {
+      // Coba muat kategori sekali lagi
+      _categoryService
+          .getCategories()
+          .then((categoriesData) {
+            setState(() {
+              categories = categoriesData;
+              // Setelah memuat kategori, panggil dialog ini lagi
+              if (categories.isNotEmpty) {
+                _showAddTransactionDialog(context);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Anda harus menambahkan minimal satu kategori terlebih dahulu',
+                    ),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                // Navigate to category screen
+                Future.delayed(const Duration(seconds: 2), () {
+                  if (mounted) {
+                    Navigator.pushNamed(context, '/category');
+                  }
+                });
+              }
+            });
+          })
+          .catchError((error) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Gagal memuat kategori: $error'),
+                backgroundColor: Colors.red,
               ),
-            ),
-          ],
-        ),
-      );
+            );
+          });
+      return;
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: transactions.length,
-      itemBuilder: (context, index) {
-        final transaction = transactions[index];
-        final date = DateFormat('dd MMM yyyy', 'id_ID').format(transaction['date']);
-        
-        if (index == 0 || date != DateFormat('dd MMM yyyy', 'id_ID').format(transactions[index - 1]['date'])) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 8, bottom: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  date,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                ),
-              ),
-              _buildTransactionItem(context, transaction),
-            ],
-          );
-        }
-        return _buildTransactionItem(context, transaction);
-      },
-    );
-  }
+    // Filter categories based on type
+    List<Map<String, dynamic>> filteredCategories =
+        categories.where((cat) => cat['type'] == transactionType).toList();
 
-  Widget _buildTransactionItem(BuildContext context, Map<String, dynamic> transaction) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+    // Pastikan ada kategori yang tersedia dan tetapkan ID default
+    if (filteredCategories.isNotEmpty) {
+      logger.d(
+        'Ada ${filteredCategories.length} kategori tersedia: ${filteredCategories[0]}',
+      );
+      var firstCategory = filteredCategories[0];
+      // Pastikan ID dikonversi ke string untuk dropdown
+      categoryId = firstCategory['id'].toString();
+      logger.d('Kategori default ID: $categoryId (${categoryId.runtimeType})');
+    } else {
+      logger.w('Tidak ada kategori untuk tipe: $transactionType');
+      categoryId = '';
+    }
+
+    // Set default account jika tersedia
+    if (accounts.isNotEmpty) {
+      accountId = accounts[0]['id'].toString();
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () => _showTransactionDetails(context, transaction),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: transaction['color'].withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(
-                    transaction['icon'],
-                    color: transaction['color'],
-                    size: 24,
-                  ),
+      builder:
+          (context) => StatefulBuilder(
+            builder: (context, setState) {
+              // Function to filter categories
+              void filterCategoriesByType(String type) {
+                setState(() {
+                  transactionType = type;
+                  filteredCategories =
+                      categories.where((cat) => cat['type'] == type).toList();
+
+                  if (filteredCategories.isNotEmpty) {
+                    var firstCategory = filteredCategories[0];
+                    categoryId = firstCategory['id'].toString();
+                    logger.d('Kategori terpilih setelah filter: $categoryId');
+                  } else {
+                    categoryId = '';
+                  }
+                });
+              }
+
+              return Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
                 ),
-                const SizedBox(width: 16),
-                Expanded(
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.8,
+                  ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        transaction['title'],
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                      // Handle untuk drag
+                      Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(top: 16, bottom: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        transaction['category'],
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '${transaction['isExpense'] ? '-' : '+'} ${currencyFormatter.format(transaction['amount'])}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: transaction['isExpense'] ? Colors.red[700] : Colors.green[700],
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      DateFormat('HH:mm', 'id_ID').format(transaction['date']),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[500],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showTransactionDetails(
-    BuildContext context,
-    Map<String, dynamic> transaction,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Add drag indicator
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(top: 16, bottom: 8),
-              
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-                left: 24,
-                right: 24,
-                top: 24,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Detail Transaksi',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        // Fixed: Replaced withOpacity with withValues
-                        color: transaction['color'].withValues(alpha: 51.0), // 0.2 * 255 = 51
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        transaction['icon'],
-                        color: transaction['color'],
-                        size: 40,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Center(
-                    child: Text(
-                      '${transaction['isExpense'] ? '-' : '+'} ${currencyFormatter.format(transaction['amount'])}',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: transaction['isExpense'] ? Colors.red : Colors.green,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  _buildDetailItem('Judul', transaction['title']),
-                  _buildDetailItem('Kategori', transaction['category']),
-                  _buildDetailItem(
-                    'Tanggal',
-                    DateFormat('dd MMMM yyyy', 'id_ID').format(transaction['date']),
-                  ),
-                  _buildDetailItem(
-                    'Tipe',
-                    transaction['isExpense'] ? 'Pengeluaran' : 'Pemasukan',
-                  ),
-                  const SizedBox(height: 32),
-                  // Only delete button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        // Delete transaction logic
-                        Navigator.pop(context);
-                      },
-                      icon: const Icon(Icons.delete),
-                      label: const Text('Hapus'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildDetailItem(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: TextStyle(fontSize: 16, color: Colors.grey[600])),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAddTransactionModal(BuildContext context) {
-    final formKey = GlobalKey<FormState>();
-    String title = '';
-    double amount = 0;
-    String category = 'Makanan';
-    bool isExpense = true;
-
-    final categories = [
-      {'name': 'Makanan', 'icon': Icons.restaurant, 'color': Colors.orange},
-      {
-        'name': 'Transportasi',
-        'icon': Icons.directions_car,
-        'color': Colors.purple,
-      },
-      {'name': 'Utilitas', 'icon': Icons.electric_bolt, 'color': Colors.blue},
-      {'name': 'Belanja', 'icon': Icons.shopping_bag, 'color': Colors.pink},
-      {'name': 'Hiburan', 'icon': Icons.movie, 'color': Colors.red},
-      {
-        'name': 'Pendapatan',
-        'icon': Icons.account_balance_wallet,
-        'color': Colors.green,
-      },
-      {'name': 'Lainnya', 'icon': Icons.more_horiz, 'color': Colors.grey},
-    ];
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Add drag indicator
-                Container(
-                  width: 40,
-                  height: 4,
-                 margin: const EdgeInsets.only(top: 16, bottom: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).viewInsets.bottom,
-                    left: 24,
-                    right: 24,
-                    top: 24,
-                  ),
-                  child: Form(
-                    key: formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Tambah ${isExpense ? 'Pengeluaran' : 'Pemasukan'}',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.close),
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Transaction Type Toggle
-                        Row(
-                          children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    isExpense = true;
-                                  });
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        isExpense ? Colors.red : Colors.grey[200],
-                                    borderRadius: const BorderRadius.horizontal(
-                                      left: Radius.circular(8),
-                                    ),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      'Pengeluaran',
-                                      style: TextStyle(
-                                        color:
-                                            isExpense
-                                                ? Colors.white
-                                                : Colors.grey[800],
-                                        fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: Container(
+                            padding: const EdgeInsets.all(24),
+                            child: Form(
+                              key: formKey,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text(
+                                        'Tambah Transaksi Baru',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    isExpense = false;
-                                    category = 'Pendapatan';
-                                  });
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        !isExpense
-                                            ? Colors.green
-                                            : Colors.grey[200],
-                                    borderRadius: const BorderRadius.horizontal(
-                                      right: Radius.circular(8),
-                                    ),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      'Pemasukan',
-                                      style: TextStyle(
-                                        color:
-                                            !isExpense
-                                                ? Colors.white
-                                                : Colors.grey[800],
-                                        fontWeight: FontWeight.bold,
+                                      IconButton(
+                                        icon: const Icon(Icons.close),
+                                        onPressed: () => Navigator.pop(context),
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                                  const SizedBox(height: 24),
 
-                        const SizedBox(height: 16),
+                                  // Tipe Transaksi
+                                  CustomSegmentedButton(
+                                    options: const ['Pengeluaran', 'Pemasukan'],
+                                    selectedIndex:
+                                        transactionType == 'expense' ? 0 : 1,
+                                    onChanged: (index) {
+                                      filterCategoriesByType(
+                                        index == 0 ? 'expense' : 'income',
+                                      );
+                                    },
+                                  ),
 
-                        // Amount Field
-                        TextFormField(
-                          decoration: const InputDecoration(
-                            labelText: 'Jumlah',
-                            prefixText: 'Rp ',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.number,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Silakan masukkan jumlah';
-                            }
-                            if (double.tryParse(value) == null) {
-                              return 'Silakan masukkan angka yang valid';
-                            }
-                            return null;
-                          },
-                          onSaved: (value) {
-                            amount = double.parse(value!);
-                          },
-                        ),
+                                  const SizedBox(height: 24),
 
-                        const SizedBox(height: 16),
+                                  // Jumlah
+                                  CustomTextField(
+                                    label: 'Jumlah',
+                                    hint: 'Contoh: 50000',
+                                    prefixText: 'Rp ',
+                                    prefixIcon: Icons.monetization_on_outlined,
+                                    keyboardType: TextInputType.number,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly,
+                                    ],
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Jumlah tidak boleh kosong';
+                                      }
+                                      return null;
+                                    },
+                                    onChanged: (value) {
+                                      amount = value;
+                                    },
+                                    isRequired: true,
+                                  ),
 
-                        // Title Field
-                        TextFormField(
-                          decoration: const InputDecoration(
-                            labelText: 'Judul',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Silakan masukkan judul';
-                            }
-                            return null;
-                          },
-                          onSaved: (value) {
-                            title = value!;
-                          },
-                        ),
+                                  const SizedBox(height: 16),
 
-                        const SizedBox(height: 16),
+                                  // Deskripsi
+                                  CustomTextField(
+                                    label: 'Deskripsi',
+                                    hint: 'Contoh: Makan Siang',
+                                    prefixIcon: Icons.description_outlined,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Deskripsi tidak boleh kosong';
+                                      }
+                                      return null;
+                                    },
+                                    onChanged: (value) {
+                                      description = value;
+                                    },
+                                    isRequired: true,
+                                  ),
 
-                        // Category Selection
-                        if (isExpense) ...[
-                          const Text(
-                            'Kategori',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children:
-                                categories
-                                    .where(
-                                      (c) =>
-                                          isExpense
-                                              ? c['name'] != 'Pendapatan'
-                                              : c['name'] == 'Pendapatan',
-                                    )
-                                    .map((c) {
-                                      return GestureDetector(
-                                        onTap: () {
-                                          setState(() {
-                                            category = c['name'] as String;
-                                          });
-                                        },
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 8,
+                                  const SizedBox(height: 16),
+
+                                  // Rekening (opsional)
+                                  if (accounts.isNotEmpty)
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            left: 4.0,
+                                            bottom: 8.0,
                                           ),
+                                          child: Text(
+                                            'Rekening',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.grey[800],
+                                            ),
+                                          ),
+                                        ),
+                                        Container(
                                           decoration: BoxDecoration(
-                                            color: category == c['name']
-                                                ? (c['color'] as Color).withValues(alpha: 51.0)
-                                                : Colors.grey[200],
-                                            borderRadius: BorderRadius.circular(16),
-                                            border: category == c['name']
-                                                ? Border.all(color: c['color'] as Color)
-                                                : null,
+                                            color: Colors.grey.shade50,
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.grey.shade300,
+                                              width: 1.0,
+                                            ),
+                                          ),
+                                          child: DropdownButtonFormField<
+                                            String
+                                          >(
+                                            decoration: const InputDecoration(
+                                              contentPadding:
+                                                  EdgeInsets.symmetric(
+                                                    horizontal: 16,
+                                                    vertical: 12,
+                                                  ),
+                                              border: InputBorder.none,
+                                              enabledBorder: InputBorder.none,
+                                              focusedBorder: InputBorder.none,
+                                            ),
+                                            value: accountId,
+                                            icon: Icon(
+                                              Icons.keyboard_arrow_down_rounded,
+                                              color: Colors.grey[600],
+                                            ),
+                                            items:
+                                                accounts.map((account) {
+                                                  final acctId =
+                                                      account['id'].toString();
+                                                  final accountType =
+                                                      account['type'] ?? 'cash';
+                                                  IconData iconData;
+                                                  Color iconColor;
+
+                                                  // Set icon based on account type
+                                                  switch (accountType) {
+                                                    case 'bank':
+                                                      iconData =
+                                                          Icons.account_balance;
+                                                      iconColor =
+                                                          Colors.blue[700]!;
+                                                      break;
+                                                    case 'ewallet':
+                                                      iconData =
+                                                          Icons.smartphone;
+                                                      iconColor =
+                                                          Colors.purple[700]!;
+                                                      break;
+                                                    case 'cash':
+                                                    default:
+                                                      iconData = Icons.wallet;
+                                                      iconColor =
+                                                          Colors.green[700]!;
+                                                  }
+
+                                                  return DropdownMenuItem<
+                                                    String
+                                                  >(
+                                                    value: acctId,
+                                                    child: Row(
+                                                      children: [
+                                                        Container(
+                                                          padding:
+                                                              const EdgeInsets.all(
+                                                                6,
+                                                              ),
+                                                          decoration: BoxDecoration(
+                                                            color: iconColor
+                                                                .withOpacity(
+                                                                  0.1,
+                                                                ),
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  6,
+                                                                ),
+                                                          ),
+                                                          child: Icon(
+                                                            iconData,
+                                                            color: iconColor,
+                                                            size: 18,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 12,
+                                                        ),
+                                                        Text(
+                                                          account['name'],
+                                                          style: TextStyle(
+                                                            color:
+                                                                Colors
+                                                                    .grey[800],
+                                                            fontSize: 15,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                }).toList(),
+                                            onChanged: (value) {
+                                              setState(() {
+                                                accountId = value!;
+                                                logger.d(
+                                                  'Rekening terpilih: $accountId',
+                                                );
+                                              });
+                                            },
+                                            dropdownColor: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  else
+                                    InkWell(
+                                      onTap: () {
+                                        // Arahkan ke halaman rekening
+                                        Navigator.pushNamed(
+                                          context,
+                                          '/account',
+                                        ).then((_) {
+                                          // Muat ulang rekening saat kembali
+                                          _loadData();
+                                        });
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[50],
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.grey[300]!,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(10),
+                                              decoration: BoxDecoration(
+                                                color: Theme.of(
+                                                  context,
+                                                ).primaryColor.withOpacity(0.1),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: Icon(
+                                                Icons
+                                                    .add_circle_outline_rounded,
+                                                color:
+                                                    Theme.of(
+                                                      context,
+                                                    ).primaryColor,
+                                                size: 20,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            const Text(
+                                              'Tambahkan rekening untuk melacak saldo',
+                                              style: TextStyle(
+                                                color: Colors.black87,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+
+                                  const SizedBox(height: 16),
+
+                                  // Tanggal Transaksi
+                                  CustomDatePicker(
+                                    label: 'Tanggal Transaksi',
+                                    hint: 'Pilih tanggal',
+                                    value: selectedDate,
+                                    onChanged: (date) {
+                                      setState(() {
+                                        selectedDate = date;
+                                      });
+                                    },
+                                  ),
+
+                                  const SizedBox(height: 16),
+
+                                  // Kategori
+                                  if (filteredCategories.isNotEmpty)
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            left: 4.0,
+                                            bottom: 8.0,
                                           ),
                                           child: Row(
-                                            mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Icon(
-                                                c['icon'] as IconData,
-                                                color:
-                                                    category == c['name']
-                                                        ? c['color'] as Color
-                                                        : Colors.grey[600],
-                                                size: 16,
-                                              ),
-                                              const SizedBox(width: 4),
                                               Text(
-                                                c['name'] as String,
+                                                'Kategori',
                                                 style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Colors.grey[800],
+                                                ),
+                                              ),
+                                              Text(
+                                                ' *',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
                                                   color:
-                                                      category == c['name']
-                                                          ? c['color'] as Color
-                                                          : Colors.grey[800],
+                                                      Theme.of(
+                                                        context,
+                                                      ).colorScheme.error,
                                                 ),
                                               ),
                                             ],
                                           ),
                                         ),
-                                      );
-                                    })
-                                    .toList(),
-                          ),
-                        ],
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.shade50,
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.grey.shade300,
+                                              width: 1.0,
+                                            ),
+                                          ),
+                                          child: DropdownButtonFormField<
+                                            String
+                                          >(
+                                            decoration: const InputDecoration(
+                                              contentPadding:
+                                                  EdgeInsets.symmetric(
+                                                    horizontal: 16,
+                                                    vertical: 12,
+                                                  ),
+                                              border: InputBorder.none,
+                                              enabledBorder: InputBorder.none,
+                                              focusedBorder: InputBorder.none,
+                                            ),
+                                            value: categoryId,
+                                            icon: Icon(
+                                              Icons.keyboard_arrow_down_rounded,
+                                              color: Colors.grey[600],
+                                            ),
+                                            items:
+                                                filteredCategories.map((
+                                                  category,
+                                                ) {
+                                                  // Pastikan ID dikonversi ke string
+                                                  final catId =
+                                                      category['id'].toString();
+                                                  logger.d(
+                                                    'Mapping category ID: ${category['id']} ke string: $catId',
+                                                  );
 
-                        const SizedBox(height: 24),
+                                                  final categoryColor = Color(
+                                                    int.parse(
+                                                          category['color']
+                                                              .substring(1, 7),
+                                                          radix: 16,
+                                                        ) +
+                                                        0xFF000000,
+                                                  );
 
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              if (formKey.currentState!.validate()) {
-                                formKey.currentState!.save();
-                                // Replace print with logger
-                                logger.i('Menambahkan transaksi: $title - $category - Rp ${amount.toStringAsFixed(0)}');
-                                Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Transaksi berhasil ditambahkan'),
-                                    backgroundColor: Colors.green,
+                                                  return DropdownMenuItem<
+                                                    String
+                                                  >(
+                                                    value: catId,
+                                                    child: Row(
+                                                      children: [
+                                                        Container(
+                                                          padding:
+                                                              const EdgeInsets.all(
+                                                                6,
+                                                              ),
+                                                          decoration: BoxDecoration(
+                                                            color: categoryColor
+                                                                .withOpacity(
+                                                                  0.1,
+                                                                ),
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  6,
+                                                                ),
+                                                          ),
+                                                          child: Icon(
+                                                            IconData(
+                                                              _getIconCode(
+                                                                category['icon'],
+                                                              ),
+                                                              fontFamily:
+                                                                  'MaterialIcons',
+                                                            ),
+                                                            color:
+                                                                categoryColor,
+                                                            size: 18,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 12,
+                                                        ),
+                                                        Text(
+                                                          category['name'],
+                                                          style: TextStyle(
+                                                            color:
+                                                                Colors
+                                                                    .grey[800],
+                                                            fontSize: 15,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                }).toList(),
+                                            onChanged: (value) {
+                                              setState(() {
+                                                categoryId = value!;
+                                                logger.d(
+                                                  'Kategori terpilih: $categoryId',
+                                                );
+                                              });
+                                            },
+                                            dropdownColor: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  else
+                                    Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red[50],
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: Colors.red[200]!,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.error_outline,
+                                            color: Colors.red[400],
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          const Flexible(
+                                            child: Text(
+                                              'Tidak ada kategori untuk tipe transaksi ini. Silakan tambahkan kategori terlebih dahulu.',
+                                              style: TextStyle(
+                                                color: Colors.red,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                  const SizedBox(height: 24),
+
+                                  CustomButton(
+                                    text: 'Simpan Transaksi',
+                                    icon: Icons.check_circle_outline,
+                                    onPressed:
+                                        filteredCategories.isNotEmpty
+                                            ? () {
+                                              if (formKey.currentState!
+                                                  .validate()) {
+                                                formKey.currentState!.save();
+
+                                                // Format tanggal
+                                                final formattedDate =
+                                                    DateFormat(
+                                                      'yyyy-MM-dd',
+                                                    ).format(selectedDate);
+
+                                                // Buat data transaksi
+                                                final transactionData = {
+                                                  'amount': amount,
+                                                  'description': description,
+                                                  'category_id': categoryId,
+                                                  'date': formattedDate,
+                                                  'type': transactionType,
+                                                };
+
+                                                // Tambahkan account_id jika rekening dipilih
+                                                if (accounts.isNotEmpty &&
+                                                    accountId.isNotEmpty) {
+                                                  transactionData['account_id'] =
+                                                      accountId;
+                                                }
+
+                                                logger.d(
+                                                  'Mengirim data transaksi: $transactionData',
+                                                );
+
+                                                // Tambah transaksi baru
+                                                _createTransaction(
+                                                  transactionData,
+                                                );
+                                                Navigator.pop(context);
+                                              }
+                                            }
+                                            : null,
                                   ),
-                                );
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).primaryColor,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                            child: Text(
-                              'Simpan Transaksi',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                                ],
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            );
-              }
-            );
-          },
-        );
+              );
+            },
+          ),
+    );
   }
-  }
-// Remove extra closing brace as it's redundant
 
+  Widget _buildTransactionList(
+    List<Map<String, dynamic>> filteredTransactions,
+  ) {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (errorMessage.isNotEmpty) {
+      return Center(child: Text(errorMessage));
+    }
+
+    if (filteredTransactions.isEmpty) {
+      return const Center(child: Text('Belum ada transaksi'));
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: filteredTransactions.length,
+      itemBuilder: (context, index) {
+        final transaction = filteredTransactions[index];
+
+        // Cari kategori yang sesuai untuk mendapatkan warna dan ikon
+        final category = categories.firstWhere(
+          (c) => c['id'] == transaction['category_id'],
+          orElse:
+              () => {
+                'name': 'Lainnya',
+                'color': '#CCCCCC',
+                'icon': 'more_horiz',
+              },
+        );
+
+        // Parse color dari string hex jika ada
+        Color categoryColor = Colors.grey;
+        if (category['color'] != null) {
+          try {
+            if (category['color'] is String &&
+                (category['color'] as String).startsWith('#')) {
+              categoryColor = Color(
+                int.parse(
+                      (category['color'] as String).substring(1, 7),
+                      radix: 16,
+                    ) +
+                    0xFF000000,
+              );
+            } else if (category['color'] is Color) {
+              categoryColor = category['color'] as Color;
+            }
+          } catch (e) {
+            logger.e('Error parsing color', error: e);
+          }
+        }
+
+        // Dapatkan tanggal transaksi dalam format lokal
+        String formattedDate = '';
+        try {
+          final transactionDate = DateTime.parse(
+            transaction['transaction_date'] ?? DateTime.now().toIso8601String(),
+          );
+          formattedDate = DateFormat(
+            'dd MMM yyyy',
+            'id_ID',
+          ).format(transactionDate);
+        } catch (e) {
+          formattedDate = 'Tanggal tidak valid';
+        }
+
+        return TransactionSlidable(
+          deleteConfirmationText:
+              'Apakah Anda yakin ingin menghapus transaksi "${transaction['description']}"?',
+          transactionName: transaction['description'] ?? 'Transaksi',
+          onDelete: () => _deleteTransaction(transaction['id'].toString()),
+          child: TransactionCard(
+            transaction: transaction,
+            currencyFormatter: currencyFormatter,
+            showCategory: true,
+          ),
+        );
+      },
+    );
+  }
+
+  // Helper untuk mendapatkan ikon dari string ikon
+  IconData _getCategoryIcon(dynamic iconData) {
+    if (iconData is IconData) return iconData;
+
+    // Map string ikon ke IconData
+    final iconMap = {
+      'restaurant': Icons.restaurant,
+      'fastfood': Icons.fastfood,
+      'directions_car': Icons.directions_car,
+      'train': Icons.train,
+      'electric_bolt': Icons.electric_bolt,
+      'shower': Icons.shower,
+      'shopping_bag': Icons.shopping_bag,
+      'shopping_cart': Icons.shopping_cart,
+      'movie': Icons.movie,
+      'sports_esports': Icons.sports_esports,
+      'account_balance_wallet': Icons.account_balance_wallet,
+      'attach_money': Icons.attach_money,
+      'card_giftcard': Icons.card_giftcard,
+      'more_horiz': Icons.more_horiz,
+      'health_and_safety': Icons.health_and_safety,
+      'school': Icons.school,
+      'home': Icons.home,
+    };
+
+    return iconMap[iconData] ?? Icons.help_outline;
+  }
+
+  // Helper method untuk mengkonversi nilai amount ke numerik
+  dynamic _getAmountValue(dynamic amount) {
+    if (amount == null) return 0;
+    if (amount is num) return amount;
+    if (amount is String) {
+      return double.tryParse(amount) ?? 0;
+    }
+    return 0;
+  }
+
+  // Fungsi untuk mendapatkan kode ikon dari string nama ikon
+  int _getIconCode(String iconName) {
+    Map<String, int> iconCodes = {
+      'shopping_bag': Icons.shopping_bag.codePoint,
+      'restaurant': Icons.restaurant.codePoint,
+      'directions_car': Icons.directions_car.codePoint,
+      'home': Icons.home.codePoint,
+      'medical_services': Icons.medical_services.codePoint,
+      'school': Icons.school.codePoint,
+      'sports_esports': Icons.sports_esports.codePoint,
+      'account_balance_wallet': Icons.account_balance_wallet.codePoint,
+      'card_giftcard': Icons.card_giftcard.codePoint,
+      'more_horiz': Icons.more_horiz.codePoint,
+      // Default fallback
+      'default': Icons.category.codePoint,
+    };
+
+    return iconCodes[iconName] ?? iconCodes['default']!;
+  }
+}

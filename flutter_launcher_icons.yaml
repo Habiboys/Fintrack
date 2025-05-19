@@ -1,0 +1,33 @@
+flutter_launcher_icons:
+  # Path ke file gambar icon (harus minimum 1024x1024px untuk iOS)
+  image_path: "assets/logofintrack.png"
+  
+  # Opacity icon (opsional, untuk Android)
+  # android_icon_background_color akan hanya terlihat jika opacity kurang dari 1.0
+  image_path_android: "assets/logofintrack.png"
+  
+  # Path untuk icon iOS (opsional, default ke image_path)
+  image_path_ios: "assets/logofintrack.png"
+  
+  # Warna background icon (untuk Android) - diubah menjadi putih
+  android_icon_background_color: "#FFFFFF"
+  
+  # Jika ingin icon adaptif pada Android (background terpisah)
+  adaptive_icon_foreground: "assets/logofintrack.png"
+  adaptive_icon_background: "#FFFFFF"
+  
+  # Platform yang didukung
+  android: true
+  ios: true
+  
+  # Config tambahan
+  remove_alpha_ios: true
+  min_sdk_android: 21 # Android 5.0
+  
+  # Icon web (opsional)
+  web:
+    generate: false
+  
+  # Icon Windows (opsional)
+  windows:
+    generate: false 
