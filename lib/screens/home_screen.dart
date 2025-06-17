@@ -9,6 +9,7 @@ import 'package:fintrack/main.dart';
 import 'dart:math';
 import 'package:fintrack/widgets/transaction_card.dart';
 
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 

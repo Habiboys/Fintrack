@@ -3,18 +3,17 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ApiService {
   // Base URL menggunakan localhost dengan port yang benar sesuai backend
+  static String baseUrl =
+      kIsWeb ? 'http://localhost:3000/api' : 'http://10.0.2.2:3000/api';
+
   // static String baseUrl =
   //     Platform.isAndroid
-  //         ? 'http://10.0.2.2:3000/api'
-  //         : 'http://localhost:3000/api';
-
-  static String baseUrl =
-      Platform.isAndroid
-          ? 'http://20.251.153.107:3000/api'
-          : 'http://20.251.153.107:3000/api';
+  //         ? 'http://20.251.153.107:3000/api'
+  //         : 'http://20.251.153.107:3000/api';
 
   // Initialize logger
   final _logger = Logger();
