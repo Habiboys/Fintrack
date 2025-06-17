@@ -518,8 +518,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             child: InkWell(
                               onTap:
-                                  index == 5
-                                      ? _logout
+                                  setting['onTap'] != null
+                                      ? setting['onTap'] as Function()
                                       : () {
                                         if (setting['title'] == 'Kategori') {
                                           // Navigasi khusus untuk Kategori

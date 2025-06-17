@@ -102,7 +102,6 @@ class _MainScreenState extends State<MainScreen> {
       bool isAuthenticated = await _authService.isAuthenticated();
       if (!isAuthenticated && mounted) {
         _logger.w('Sesi login tidak valid, kembali ke halaman login');
-        // Jika token tidak valid, redirect ke login
         Navigator.of(context).pushReplacementNamed('/login');
       }
     } catch (e) {
@@ -115,70 +114,152 @@ class _MainScreenState extends State<MainScreen> {
     const TransactionScreen(),
     const BudgetScreen(),
     const CategoryScreen(),
-    // const AccountScreen(),
     const ProfileScreen(),
   ];
 
-  final List<TabItem> items = [
-    const TabItem(icon: Icons.dashboard_rounded, title: 'Home'),
-    const TabItem(icon: Icons.sync_alt_rounded, title: 'Transaksi'),
-    const TabItem(
+  final List<NavigationItem> items = [
+    NavigationItem(icon: Icons.dashboard_rounded, label: 'Home'),
+    NavigationItem(icon: Icons.sync_alt_rounded, label: 'Transaksi'),
+    NavigationItem(
       icon: Icons.account_balance_wallet_rounded,
-      title: 'Anggaran',
+      label: 'Anggaran',
     ),
-    const TabItem(icon: Icons.grid_view_rounded, title: 'Kategori'),
-    // const TabItem(icon: Icons.account_balance_wallet, title: 'Rekening'),
-    const TabItem(icon: Icons.person_outline_rounded, title: 'Profil'),
+    NavigationItem(icon: Icons.grid_view_rounded, label: 'Kategori'),
+    NavigationItem(icon: Icons.person_outline_rounded, label: 'Profil'),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final isWideScreen = MediaQuery.of(context).size.width > 768;
+
     return WillPopScope(
       onWillPop: () async {
-        // Jika pengguna tidak berada di tab beranda, maka kembalikan ke beranda
         if (_selectedIndex != 0) {
           setState(() {
             _selectedIndex = 0;
           });
-          return false; // Jangan keluar dari aplikasi
+          return false;
         }
-        // Jika sudah di beranda, biarkan sistem menangani navigasi kembali
         return true;
       },
       child: Scaffold(
-        body: _screens[_selectedIndex],
-        bottomNavigationBar: Container(
-          height: 70,
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
+        body: Row(
+          children: [
+            if (isWideScreen) _buildSidebar(),
+            Expanded(child: _screens[_selectedIndex]),
+          ],
+        ),
+        bottomNavigationBar: isWideScreen ? null : _buildBottomBar(),
+      ),
+    );
+  }
+
+  Widget _buildSidebar() {
+    return Container(
+      width: 250,
+      color: Colors.white,
+      child: Column(
+        children: [
+          Container(
+            height: 100,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
+            ),
+            child: Text(
+              'FinTrack',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).primaryColor,
               ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: BottomBarDefault(
-              items: items,
-              backgroundColor: Colors.transparent,
-              color: Colors.grey,
-              colorSelected: Theme.of(context).primaryColor,
-              indexSelected: _selectedIndex,
-              onTap: (index) => setState(() => _selectedIndex = index),
-              animated: true,
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeOutQuint,
-              paddingVertical: 12,
-              enableShadow: false,
             ),
           ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: items.length,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemBuilder: (context, index) {
+                final item = items[index];
+                final isSelected = _selectedIndex == index;
+                return Container(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color:
+                        isSelected
+                            ? Theme.of(context).primaryColor
+                            : Colors.transparent,
+                  ),
+                  child: ListTile(
+                    leading: Icon(
+                      item.icon,
+                      color: isSelected ? Colors.white : Colors.grey[700],
+                    ),
+                    title: Text(
+                      item.label,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : Colors.grey[800],
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                    onTap: () => setState(() => _selectedIndex = index),
+                    selected: isSelected,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomBar() {
+    return Container(
+      height: 70,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BottomBarDefault(
+          items:
+              items
+                  .map((item) => TabItem(icon: item.icon, title: item.label))
+                  .toList(),
+          backgroundColor: Colors.transparent,
+          color: Colors.grey,
+          colorSelected: Theme.of(context).primaryColor,
+          indexSelected: _selectedIndex,
+          onTap: (index) => setState(() => _selectedIndex = index),
+          animated: true,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOutQuint,
+          paddingVertical: 12,
+          enableShadow: false,
         ),
       ),
     );
   }
+}
+
+class NavigationItem {
+  final IconData icon;
+  final String label;
+
+  NavigationItem({required this.icon, required this.label});
 }
