@@ -43,7 +43,6 @@ class AuthService {
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
-    
         if (responseData['jwt_token'] != null) {
           await storeToken(responseData['jwt_token']);
         }
@@ -190,6 +189,37 @@ class AuthService {
     } catch (e) {
       _logger.e('Get current user error', error: e);
       return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  Future<void> updateFcmToken(String token) async {
+    try {
+      final String? authToken = await getToken();
+      if (authToken == null) {
+        _logger.w('Tidak ada token autentikasi untuk update FCM token');
+        return;
+      }
+
+      final response = await http.post(
+        Uri.parse('${ApiService.baseUrl}/api/notifications/update-fcm-token'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+        body: jsonEncode({'fcm_token': token}),
+      );
+
+      if (response.statusCode != 200) {
+        _logger.e(
+          'Gagal update FCM token. Status: ${response.statusCode}, Body: ${response.body}',
+        );
+        throw Exception('Gagal memperbarui FCM token: ${response.statusCode}');
+      }
+
+      _logger.i('FCM token berhasil diupdate');
+    } catch (e) {
+      _logger.e('Error updating FCM token: $e');
+      rethrow;
     }
   }
 }

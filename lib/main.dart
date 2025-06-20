@@ -12,24 +12,42 @@ import 'package:fintrack/screens/account_screen.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:fintrack/services/auth_service.dart';
 import 'package:logger/logger.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:fintrack/services/notification_service.dart';
+import 'package:fintrack/firebase_options.dart';
 
 void main() async {
-  // Persiapan untuk splash screen
+  // Persiapan untuk splash screen dan Flutter bindings
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-    ),
-  );
+  try {
+    // Inisialisasi Firebase dengan konfigurasi default
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  // Cek token untuk login persisten
-  final authService = AuthService();
-  final bool isLoggedIn = await authService.isAuthenticated();
+    // Inisialisasi notification service
+    final notificationService = NotificationService();
+    await notificationService.initialize();
 
-  runApp(MyApp(isLoggedIn: isLoggedIn));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
+
+    // Cek token untuk login persisten
+    final authService = AuthService();
+    final bool isLoggedIn = await authService.isAuthenticated();
+
+    runApp(MyApp(isLoggedIn: isLoggedIn));
+  } catch (e) {
+    print('Error initializing Firebase: $e');
+    // Tetap jalankan aplikasi meskipun Firebase gagal diinisialisasi
+    runApp(const MyApp(isLoggedIn: false));
+  }
 }
 
 class MyApp extends StatelessWidget {
