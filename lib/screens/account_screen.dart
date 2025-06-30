@@ -67,7 +67,7 @@ class _AccountScreenState extends State<AccountScreen> {
     String name = isEditing ? account['name'] : '';
     String type = isEditing ? account['type'] : 'cash';
     String balance = isEditing ? account['balance'].toString() : '0';
-    String currency = isEditing ? account['currency'] : 'IDR';
+    String currency = 'IDR'; // Selalu gunakan IDR sebagai mata uang default
 
     showModalBottomSheet(
       context: context,
@@ -227,36 +227,6 @@ class _AccountScreenState extends State<AccountScreen> {
                               },
                               onChanged: (value) {
                                 balance = value;
-                              },
-                              isRequired: true,
-                            ),
-
-                            const SizedBox(height: 16),
-
-                            // Mata Uang
-                            CustomDropdown<String>(
-                              label: 'Mata Uang',
-                              hint: 'Pilih mata uang',
-                              value: currency,
-                              prefixIcon: Icons.currency_exchange,
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 'IDR',
-                                  child: Text('Rupiah (IDR)'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'USD',
-                                  child: Text('US Dollar (USD)'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'EUR',
-                                  child: Text('Euro (EUR)'),
-                                ),
-                              ],
-                              onChanged: (value) {
-                                setState(() {
-                                  currency = value!;
-                                });
                               },
                               isRequired: true,
                             ),
