@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:fintrack/services/auth_service.dart'; // Import service
 import 'package:fintrack/services/dashboard_service.dart'; // Import service
+import 'package:fintrack/screens/currency_conversion_screen.dart';
 import 'package:logger/logger.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -477,10 +478,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               'route': null,
                             },
                             {
-                              'title': 'Mata Uang',
-                              'icon': Icons.attach_money,
+                              'title': 'Konversi Mata Uang',
+                              'icon': Icons.currency_exchange,
                               'color': Colors.green,
-                              'route': null,
+                              'route': '/currency-conversion',
                             },
                             {
                               'title': 'Keamanan',
@@ -526,6 +527,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           Navigator.of(
                                             context,
                                           ).pushNamed('/category');
+                                        } else if (setting['title'] ==
+                                            'Konversi Mata Uang') {
+                                          // Navigasi ke halaman konversi mata uang
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (context) =>
+                                                      const CurrencyConversionScreen(),
+                                            ),
+                                          );
                                         } else if (setting['route'] != null) {
                                           // Untuk route lain yang sudah didefinisikan
                                           final route =

@@ -3,6 +3,9 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fintrack/services/api_service.dart';
 import 'package:logger/logger.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' show Platform;
 
 class AuthService {
   // Remove the baseUrl definition and use ApiService.baseUrl instead
@@ -29,6 +32,47 @@ class AuthService {
     await prefs.remove('jwt_token');
   }
 
+  // Get and update FCM token with retries
+  Future<void> _updateFcmToken() async {
+    // Skip untuk web dan iOS
+    if (kIsWeb || (!kIsWeb && Platform.isIOS)) {
+      _logger.i('Skip FCM token update for web/iOS');
+      return;
+    }
+
+    int maxRetries = 3;
+    int currentTry = 0;
+    String? fcmToken;
+
+    while (currentTry < maxRetries && fcmToken == null) {
+      try {
+        // Tunggu sebentar sebelum mencoba mendapatkan token
+        await Future.delayed(Duration(seconds: 1));
+
+        fcmToken = await FirebaseMessaging.instance.getToken();
+        _logger.i(
+          'Mencoba mendapatkan FCM token (attempt ${currentTry + 1}): $fcmToken',
+        );
+
+        if (fcmToken != null) {
+          await updateFcmToken(fcmToken);
+          _logger.i('FCM token berhasil diupdate: $fcmToken');
+          break;
+        }
+      } catch (e) {
+        _logger.e(
+          'Error saat mendapatkan/update FCM token (attempt ${currentTry + 1})',
+          error: e,
+        );
+      }
+      currentTry++;
+    }
+
+    if (fcmToken == null) {
+      _logger.e('Gagal mendapatkan FCM token setelah $maxRetries percobaan');
+    }
+  }
+
   // Login user
   Future<Map<String, dynamic>> login(String username, String password) async {
     try {
@@ -37,14 +81,19 @@ class AuthService {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'username': username, 'password': password}),
       );
-      // Replace print with logger
+
       _logger.d('Login Response Status: ${response.statusCode}');
       _logger.d('Login Response Body: ${response.body}');
+
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
         if (responseData['jwt_token'] != null) {
           await storeToken(responseData['jwt_token']);
+
+          // Tunggu sebentar sebelum mencoba update FCM token
+          await Future.delayed(Duration(seconds: 2));
+          await _updateFcmToken();
         }
         return {'success': true, 'data': responseData};
       } else {
@@ -78,13 +127,15 @@ class AuthService {
         }),
       );
 
-      // Replace print with logger
       _logger.d('Register Response Status: ${response.statusCode}');
       _logger.d('Register Response Body: ${response.body}');
 
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 201) {
+        // Setelah registrasi berhasil, tunggu sebentar dan coba update FCM token
+        await Future.delayed(Duration(seconds: 2));
+        await _updateFcmToken();
         return {'success': true, 'data': responseData};
       } else {
         return {
@@ -200,14 +251,19 @@ class AuthService {
         return;
       }
 
+      _logger.i('Mencoba update FCM token: $token');
+
       final response = await http.post(
-        Uri.parse('${ApiService.baseUrl}/api/notifications/update-fcm-token'),
+        Uri.parse('${ApiService.baseUrl}/notifications/update-fcm-token'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $authToken',
         },
         body: jsonEncode({'fcm_token': token}),
       );
+
+      _logger.d('Update FCM Token Response: ${response.statusCode}');
+      _logger.d('Update FCM Token Body: ${response.body}');
 
       if (response.statusCode != 200) {
         _logger.e(
@@ -218,7 +274,7 @@ class AuthService {
 
       _logger.i('FCM token berhasil diupdate');
     } catch (e) {
-      _logger.e('Error updating FCM token: $e');
+      _logger.e('Error updating FCM token', error: e);
       rethrow;
     }
   }

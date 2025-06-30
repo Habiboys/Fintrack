@@ -8,7 +8,11 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 class ApiService {
   // Base URL menggunakan localhost dengan port yang benar sesuai backend
   static String baseUrl =
-      kIsWeb ? 'http://localhost:3000/api' : 'http://10.0.2.2:3000/api';
+      kIsWeb
+          ? 'http://localhost:3000/api'
+          : Platform.isAndroid
+          ? 'http://10.0.2.2:3000/api'
+          : 'http://localhost:3000/api';
 
   // static String baseUrl =
   //     Platform.isAndroid

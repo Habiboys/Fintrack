@@ -66,7 +66,18 @@ class TransactionCard extends StatelessWidget {
 
     // Dapatkan ikon
     IconData categoryIcon = Icons.category;
-    if (transaction.containsKey('icon') && transaction['icon'] is IconData) {
+
+    // Cek apakah ini transaksi konversi mata uang
+    final bool isCurrencyConversion =
+        categoryName.toLowerCase().contains('currency conversion') ||
+        categoryName.toLowerCase().contains('konversi mata uang') ||
+        title.toLowerCase().contains('konversi');
+
+    if (isCurrencyConversion) {
+      categoryIcon = Icons.currency_exchange;
+      categoryColor = const Color(0xFF2196F3); // Biru untuk konversi mata uang
+    } else if (transaction.containsKey('icon') &&
+        transaction['icon'] is IconData) {
       categoryIcon = transaction['icon'];
     } else {
       final iconString =
@@ -255,6 +266,7 @@ class TransactionCard extends StatelessWidget {
       'school': Icons.school,
       'home': Icons.home,
       'category': Icons.category,
+      'currency_exchange': Icons.currency_exchange,
     };
 
     if (iconName is String && iconMap.containsKey(iconName)) {

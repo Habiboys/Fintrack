@@ -9,12 +9,49 @@ import 'package:fintrack/screens/login_screen.dart';
 import 'package:fintrack/screens/register_screen.dart';
 import 'package:fintrack/screens/category_screen.dart';
 import 'package:fintrack/screens/account_screen.dart';
+import 'package:fintrack/screens/currency_conversion_screen.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:fintrack/services/auth_service.dart';
 import 'package:logger/logger.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:fintrack/services/notification_service.dart';
 import 'package:fintrack/firebase_options.dart';
+import 'dart:io' show Platform;
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+
+final logger = Logger();
+
+Future<void> initializeFirebase() async {
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    // Skip notification setup for web and iOS
+    if (kIsWeb || (!kIsWeb && Platform.isIOS)) {
+      logger.i('Skip Firebase Messaging setup for web/iOS');
+      return;
+    }
+
+    // Request permission untuk notifikasi
+    final messaging = FirebaseMessaging.instance;
+    final settings = await messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+    logger.i('User granted permission: ${settings.authorizationStatus}');
+
+    // Dapatkan FCM token
+    final token = await messaging.getToken();
+    logger.i('Initial FCM Token: $token');
+
+    logger.i('Firebase initialized successfully');
+  } catch (e) {
+    logger.e('Error initializing Firebase', error: e);
+  }
+}
 
 void main() async {
   // Persiapan untuk splash screen dan Flutter bindings
@@ -22,14 +59,14 @@ void main() async {
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   try {
-    // Inisialisasi Firebase dengan konfigurasi default
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    // Inisialisasi Firebase terlebih dahulu
+    await initializeFirebase();
 
-    // Inisialisasi notification service
-    final notificationService = NotificationService();
-    await notificationService.initialize();
+    // Inisialisasi notification service hanya jika bukan web atau iOS
+    if (!kIsWeb && !Platform.isIOS) {
+      final notificationService = NotificationService();
+      await notificationService.initialize();
+    }
 
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
@@ -44,8 +81,7 @@ void main() async {
 
     runApp(MyApp(isLoggedIn: isLoggedIn));
   } catch (e) {
-    print('Error initializing Firebase: $e');
-    // Tetap jalankan aplikasi meskipun Firebase gagal diinisialisasi
+    logger.e('Error in main:', error: e);
     runApp(const MyApp(isLoggedIn: false));
   }
 }
@@ -88,6 +124,7 @@ class MyApp extends StatelessWidget {
         '/main': (context) => const MainScreen(initialTabIndex: 0),
         '/category': (context) => const CategoryScreen(),
         '/account': (context) => const AccountScreen(),
+        '/currency-conversion': (context) => const CurrencyConversionScreen(),
       },
     );
   }

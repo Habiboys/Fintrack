@@ -9,7 +9,23 @@ class AccountService {
   Future<List<Map<String, dynamic>>> getAccounts() async {
     try {
       final response = await _apiService.get('accounts');
-      return List<Map<String, dynamic>>.from(response['data'] as List);
+      final accounts = List<Map<String, dynamic>>.from(
+        response['data'] as List,
+      );
+
+      // Normalize balance untuk setiap account
+      for (var account in accounts) {
+        if (account.containsKey('balance')) {
+          final balance = account['balance'];
+          if (balance is String) {
+            account['balance'] = double.tryParse(balance) ?? 0.0;
+          } else if (balance is! num) {
+            account['balance'] = 0.0;
+          }
+        }
+      }
+
+      return accounts;
     } catch (e) {
       _logger.e('Error getting accounts', error: e);
       return [];
@@ -20,7 +36,19 @@ class AccountService {
   Future<Map<String, dynamic>> getAccountById(String id) async {
     try {
       final response = await _apiService.get('accounts/$id');
-      return response['data'] as Map<String, dynamic>;
+      final account = response['data'] as Map<String, dynamic>;
+
+      // Normalize balance
+      if (account.containsKey('balance')) {
+        final balance = account['balance'];
+        if (balance is String) {
+          account['balance'] = double.tryParse(balance) ?? 0.0;
+        } else if (balance is! num) {
+          account['balance'] = 0.0;
+        }
+      }
+
+      return account;
     } catch (e) {
       _logger.e('Error getting account by ID', error: e);
       return {};
